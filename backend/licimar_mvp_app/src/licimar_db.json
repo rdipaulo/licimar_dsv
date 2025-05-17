@@ -1,0 +1,214 @@
+{
+  "vendedores": [
+    {
+      "id": 1,
+      "nome": "Ivan Mag\u00e9"
+    },
+    {
+      "id": 2,
+      "nome": "Roberto Peixoto"
+    },
+    {
+      "id": 3,
+      "nome": "Sabino"
+    }
+  ],
+  "produtos": [
+    {
+      "id": 1,
+      "nome": "Picol\u00e9 Chicabon",
+      "preco_venda": 8.0,
+      "estoque": 100
+    },
+    {
+      "id": 2,
+      "nome": "Picol\u00e9 Tablito",
+      "preco_venda": 10.0,
+      "estoque": 80
+    },
+    {
+      "id": 3,
+      "nome": "Sorvete Magnun - classico",
+      "preco_venda": 17.0,
+      "estoque": 50
+    },
+    {
+      "id": 4,
+      "nome": "Gelo Seco (kg)",
+      "preco_venda": 28.0,
+      "estoque": 200
+    }
+  ],
+  "pedidos": [
+    {
+      "id": 1,
+      "vendedor_id": 2,
+      "vendedor_nome": "Roberto Peixoto",
+      "data_operacao": "2025-05-16T23:17:07.690513",
+      "status": "retorno",
+      "itens": [
+        {
+          "produto_id": 1,
+          "quantidade_saida": 6,
+          "quantidade_retorno": 5
+        },
+        {
+          "produto_id": 2,
+          "quantidade_saida": 8,
+          "quantidade_retorno": 6
+        },
+        {
+          "produto_id": 3,
+          "quantidade_saida": 10,
+          "quantidade_retorno": 9
+        },
+        {
+          "produto_id": 4,
+          "quantidade_saida": 2,
+          "quantidade_retorno": 0
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "vendedor_id": 3,
+      "vendedor_nome": "Sabino",
+      "data_operacao": "2025-05-16T23:19:07.513953",
+      "status": "retorno",
+      "itens": [
+        {
+          "produto_id": 1,
+          "quantidade_saida": 6,
+          "quantidade_retorno": 4
+        },
+        {
+          "produto_id": 2,
+          "quantidade_saida": 7,
+          "quantidade_retorno": 3
+        },
+        {
+          "produto_id": 3,
+          "quantidade_saida": 7,
+          "quantidade_retorno": 4
+        },
+        {
+          "produto_id": 4,
+          "quantidade_saida": 1,
+          "quantidade_retorno": 0
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "vendedor_id": 1,
+      "vendedor_nome": "Ivan Mag\u00e9",
+      "data_operacao": "2025-05-16T23:21:00.490735",
+      "status": "retorno",
+      "itens": [
+        {
+          "produto_id": 1,
+          "quantidade_saida": 5,
+          "quantidade_retorno": 3
+        },
+        {
+          "produto_id": 2,
+          "quantidade_saida": 4,
+          "quantidade_retorno": 2
+        },
+        {
+          "produto_id": 3,
+          "quantidade_saida": 6,
+          "quantidade_retorno": 3
+        },
+        {
+          "produto_id": 4,
+          "quantidade_saida": 6,
+          "quantidade_retorno": 3
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "vendedor_id": 2,
+      "vendedor_nome": "Roberto Peixoto",
+      "data_operacao": "2025-05-16T23:27:59.533026",
+      "status": "retorno",
+      "itens": [
+        {
+          "produto_id": 1,
+          "quantidade_saida": 1,
+          "quantidade_retorno": 0
+        },
+        {
+          "produto_id": 2,
+          "quantidade_saida": 1,
+          "quantidade_retorno": 0
+        },
+        {
+          "produto_id": 3,
+          "quantidade_saida": 1,
+          "quantidade_retorno": 0
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "vendedor_id": 1,
+      "vendedor_nome": "Ivan Mag\u00e9",
+      "data_operacao": "2025-05-16T23:47:54.301241",
+      "status": "retorno",
+      "itens": [
+        {
+          "produto_id": 1,
+          "quantidade_saida": 3,
+          "quantidade_retorno": 2
+        },
+        {
+          "produto_id": 2,
+          "quantidade_saida": 4,
+          "quantidade_retorno": 3
+        },
+        {
+          "produto_id": 3,
+          "quantidade_saida": 3,
+          "quantidade_retorno": 1
+        },
+        {
+          "produto_id": 4,
+          "quantidade_saida": 1.5,
+          "quantidade_retorno": 0.0
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "vendedor_id": 2,
+      "vendedor_nome": "Roberto Peixoto",
+      "data_operacao": "2025-05-16T23:54:48.480110",
+      "status": "retorno",
+      "itens": [
+        {
+          "produto_id": 1,
+          "quantidade_saida": 5,
+          "quantidade_retorno": 3
+        },
+        {
+          "produto_id": 2,
+          "quantidade_saida": 5,
+          "quantidade_retorno": 2
+        },
+        {
+          "produto_id": 3,
+          "quantidade_saida": 4,
+          "quantidade_retorno": 2
+        },
+        {
+          "produto_id": 4,
+          "quantidade_saida": 1.4,
+          "quantidade_retorno": 0.0
+        }
+      ]
+    }
+  ],
+  "ultimo_id_pedido": 6
+}

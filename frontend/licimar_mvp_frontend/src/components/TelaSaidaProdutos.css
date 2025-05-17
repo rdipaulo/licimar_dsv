@@ -1,0 +1,142 @@
+.tela-saida {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.tela-saida h1 {
+  color: #333;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.tela-saida h2 {
+  color: #444;
+  margin: 15px 0;
+}
+
+.erro {
+  color: #d9534f;
+  background-color: #f2dede;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.selecao-vendedor {
+  margin-bottom: 20px;
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+}
+
+.selecao-vendedor label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.selecao-vendedor select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.lista-produtos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.produto-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.produto-nome {
+  font-weight: bold;
+  font-size: 18px;
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.produto-preco {
+  color: #555;
+  margin-bottom: 15px;
+}
+
+.quantidade-container {
+  display: flex;
+  flex-direction: column;
+  margin-top: 10px;
+}
+
+.quantidade-container label {
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.input-quantidade {
+  padding: 8px;
+  border: 2px solid #007bff;
+  border-radius: 4px;
+  font-size: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #fff;
+}
+
+.input-quantidade:focus {
+  outline: none;
+  border-color: #0056b3;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+.botao-registrar {
+  background-color: #FFC72C;
+  color: #27251F;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  margin-top: 20px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  transition: background-color 0.3s;
+}
+
+.botao-registrar:hover {
+  background-color: #e6b325;
+}
+
+/* Estilos para impressão */
+@media print {
+  .tela-saida {
+    max-width: 100%;
+    padding: 0;
+  }
+  
+  .botao-registrar,
+  .selecao-vendedor select,
+  .input-quantidade {
+    display: none;
+  }
+  
+  .produto-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

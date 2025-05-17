@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import './TelaSaidaProdutos.css';
 
 // Componente da Tela de Saída de Produtos
 function TelaSaidaProdutos() {
@@ -52,7 +53,16 @@ function TelaSaidaProdutos() {
     const handleQuantidadeChange = (produtoId, quantidade) => {
         const produto = produtos.find(p => p.id === parseInt(produtoId, 10));
         const estoqueDisponivel = produto ? produto.estoque : 0;
-        let qtdNum = parseInt(quantidade, 10) || 0;
+        
+        // Verificar se é o produto "Gelo Seco" (id 4) para permitir valores decimais
+        const isGelo = produto && produto.nome.toLowerCase().includes("gelo");
+        
+        let qtdNum;
+        if (isGelo) {
+            qtdNum = parseFloat(quantidade) || 0;
+        } else {
+            qtdNum = parseInt(quantidade, 10) || 0;
+        }
 
         if (qtdNum < 0) qtdNum = 0;
         if (qtdNum > estoqueDisponivel) {
@@ -111,8 +121,8 @@ function TelaSaidaProdutos() {
                 // Refrescar lista de produtos para atualizar estoque (ou backend poderia retornar produtos atualizados)
                 fetch(`${API_BASE_URL}/api/produtos`).then(res => res.json()).then(data => setProdutos(data));
             } else {
-                alert(`Erro ao registrar saída: ${result.erro}`);
-                setErroApi(result.erro || "Erro desconhecido ao registrar saída.");
+                alert(`Erro ao registrar saída: ${result.message}`);
+                setErroApi(result.message || "Erro desconhecido ao registrar saída.");
             }
         } catch (error) {
             console.error("Erro ao conectar com a API:", error);
@@ -126,18 +136,17 @@ function TelaSaidaProdutos() {
     }
 
     return (
-        <div style={{ padding: '20px', maxWidth: '600px', margin: 'auto' }}>
+        <div className="tela-saida">
             <h1>Registro de Saída de Produtos</h1>
-            {erroApi && <p style={{ color: 'red' }}>Erro: {erroApi}</p>}
+            {erroApi && <p className="erro">Erro: {erroApi}</p>}
             <form onSubmit={handleSubmitSaida}>
-                <div style={{ marginBottom: '15px' }}>
-                    <label htmlFor="vendedor" style={{ display: 'block', marginBottom: '5px' }}>Selecione o Vendedor:</label>
+                <div className="selecao-vendedor">
+                    <label htmlFor="vendedor">Selecione o Vendedor:</label>
                     <select 
                         id="vendedor" 
                         value={vendedorSelecionado} 
                         onChange={(e) => setVendedorSelecionado(e.target.value)}
                         required
-                        style={{ width: '100%', padding: '8px' }}
                     >
                         <option value="">-- Selecione --</option>
                         {vendedores.map(v => <option key={v.id} value={v.nome}>{v.nome}</option>)}
@@ -146,28 +155,35 @@ function TelaSaidaProdutos() {
 
                 <h2>Produtos Disponíveis</h2>
                 {produtos.length === 0 && !loadingProdutos && <p>Nenhum produto encontrado.</p>}
-                {produtos.map(produto => (
-                    <div key={produto.id} style={{ border: '1px solid #ccc', margin: '10px 0', padding: '10px', borderRadius: '5px' }}>
-                        <p><strong>{produto.nome}</strong></p>
-                        <p>Preço: R$ {parseFloat(produto.preco_venda).toFixed(2)} - Estoque: {produto.estoque}</p>
-                        <label htmlFor={`produto_${produto.id}_qtd`} style={{ marginRight: '10px' }}>Quantidade Saída:</label>
-                        <input 
-                            type="number" 
-                            id={`produto_${produto.id}_qtd`} 
-                            min="0" 
-                            max={produto.estoque} // Limita pelo estoque atual
-                            value={itensSaida[produto.id] || ''} 
-                            onChange={(e) => handleQuantidadeChange(produto.id, e.target.value)} 
-                            style={{ padding: '5px', width: '80px' }}
-                        />
-                    </div>
-                ))}
+                <div className="lista-produtos">
+                    {produtos.map(produto => {
+                        const isGelo = produto.nome.toLowerCase().includes("gelo");
+                        return (
+                            <div key={produto.id} className="produto-card">
+                                <p className="produto-nome">{produto.nome}</p>
+                                <p className="produto-preco">Preço: R$ {parseFloat(produto.preco_venda).toFixed(2)}</p>
+                                <div className="quantidade-container">
+                                    <label htmlFor={`produto_${produto.id}_qtd`}>Quantidade Saída:</label>
+                                    <input 
+                                        type={isGelo ? "number" : "number"} 
+                                        id={`produto_${produto.id}_qtd`} 
+                                        min="0" 
+                                        step={isGelo ? "0.001" : "1"}
+                                        max={produto.estoque} // Limita pelo estoque atual
+                                        value={itensSaida[produto.id] || ''} 
+                                        onChange={(e) => handleQuantidadeChange(produto.id, e.target.value)} 
+                                        className="input-quantidade"
+                                    />
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
 
-                <button type="submit" style={{ padding: '10px 20px', marginTop: '20px', cursor: 'pointer' }}>Registrar Saída</button>
+                <button type="submit" className="botao-registrar">Registrar Saída</button>
             </form>
         </div>
     );
 }
 
 export default TelaSaidaProdutos;
-

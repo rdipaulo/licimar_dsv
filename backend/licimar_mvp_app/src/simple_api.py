@@ -1,11 +1,18 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from datetime import datetime
+import json
+import os
+import traceback
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})  # Configuração CORS mais permissiva
+# Configuração CORS mais explícita para garantir acesso de qualquer origem
+CORS(app, origins=["*"], supports_credentials=True, allow_headers=["Content-Type", "Authorization"])
 
-# Dados dos vendedores
+# Caminho para o arquivo de banco de dados
+DB_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'licimar_db.json')
+
+# Dados iniciais
 vendedores = [
     {"id": 1, "nome": "Ivan Magé"},
     {"id": 2, "nome": "Roberto Peixoto"},
@@ -24,13 +31,77 @@ produtos = [
 pedidos = []
 ultimo_id_pedido = 0
 
+# Função para verificar se um produto é gelo seco
+def is_gelo_seco(produto_id):
+    produto = next((p for p in produtos if p['id'] == produto_id), None)
+    if produto:
+        return "gelo" in produto['nome'].lower()
+    return False
+
+# Função para carregar dados do arquivo
+def carregar_dados():
+    global vendedores, produtos, pedidos, ultimo_id_pedido
+    if os.path.exists(DB_FILE):
+        try:
+            with open(DB_FILE, 'r') as f:
+                data = json.load(f)
+                vendedores = data.get('vendedores', vendedores)
+                produtos = data.get('produtos', produtos)
+                pedidos = data.get('pedidos', pedidos)
+                ultimo_id_pedido = data.get('ultimo_id_pedido', ultimo_id_pedido)
+            print(f"Dados carregados com sucesso de {DB_FILE}")
+        except Exception as e:
+            print(f"Erro ao carregar dados: {e}")
+            # Não interrompe a execução, continua com os dados padrão
+
+# Função para salvar dados no arquivo
+def salvar_dados():
+    try:
+        with open(DB_FILE, 'w') as f:
+            json.dump({
+                'vendedores': vendedores,
+                'produtos': produtos,
+                'pedidos': pedidos,
+                'ultimo_id_pedido': ultimo_id_pedido
+            }, f, indent=2)
+        print(f"Dados salvos com sucesso em {DB_FILE}")
+        return True
+    except Exception as e:
+        print(f"Erro ao salvar dados: {e}")
+        return False
+
+# Adicionar cabeçalhos CORS a todas as respostas
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
+
+# Carregar dados ao iniciar o aplicativo
+try:
+    carregar_dados()
+except Exception as e:
+    print(f"Erro ao inicializar dados: {e}")
+    # Continua com os dados padrão
+
 @app.route('/api/vendedores', methods=['GET'])
 def get_vendedores():
-    return jsonify(vendedores)
+    try:
+        return jsonify(vendedores)
+    except Exception as e:
+        print(f"Erro ao buscar vendedores: {e}")
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/produtos', methods=['GET'])
 def get_produtos():
-    return jsonify(produtos)
+    try:
+        return jsonify(produtos)
+    except Exception as e:
+        print(f"Erro ao buscar produtos: {e}")
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/pedidos/saida', methods=['POST'])
 def criar_pedido_saida():
@@ -83,6 +154,18 @@ def criar_pedido_saida():
             produto_id = item.get('produto_id')
             quantidade_saida = item.get('quantidade_saida', 0)
             
+            # Converter para float para garantir precisão decimal, especialmente para gelo seco
+            if is_gelo_seco(produto_id):
+                try:
+                    quantidade_saida = float(quantidade_saida)
+                except (ValueError, TypeError):
+                    quantidade_saida = 0.0
+            else:
+                try:
+                    quantidade_saida = int(float(quantidade_saida))
+                except (ValueError, TypeError):
+                    quantidade_saida = 0
+            
             if produto_id and quantidade_saida > 0:
                 novo_pedido["itens"].append({
                     "produto_id": produto_id,
@@ -93,6 +176,9 @@ def criar_pedido_saida():
         # Adicionar pedido à lista
         pedidos.append(novo_pedido)
         
+        # Salvar dados no arquivo
+        salvar_dados()
+        
         print("Pedido criado com sucesso:", novo_pedido)
         
         return jsonify({
@@ -101,6 +187,7 @@ def criar_pedido_saida():
         }), 201
     except Exception as e:
         print(f"Erro ao processar pedido: {e}")
+        traceback.print_exc()
         # Retornar uma mensagem de erro mais descritiva
         return jsonify({"message": f"Erro ao processar pedido: {str(e)}"}), 500
 
@@ -124,19 +211,37 @@ def registrar_retorno():
         # Atualizar status do pedido
         pedido['status'] = 'retorno'
         
-        # Atualizar quantidades de retorno (sem perda)
+        # Atualizar quantidades de retorno
         for item_retorno in dados_retorno.get('itens', []):
+            produto_id = item_retorno.get('produto_id')
+            quantidade_retorno = item_retorno.get('quantidade_retorno', 0)
+            
+            # Converter para float para garantir precisão decimal, especialmente para gelo seco
+            if is_gelo_seco(produto_id):
+                try:
+                    quantidade_retorno = float(quantidade_retorno)
+                except (ValueError, TypeError):
+                    quantidade_retorno = 0.0
+            else:
+                try:
+                    quantidade_retorno = int(float(quantidade_retorno))
+                except (ValueError, TypeError):
+                    quantidade_retorno = 0
+            
             for item_pedido in pedido['itens']:
-                if item_pedido['produto_id'] == item_retorno.get('produto_id'):
-                    item_pedido['quantidade_retorno'] = item_retorno.get('quantidade_retorno', 0)
+                if item_pedido['produto_id'] == produto_id:
+                    item_pedido['quantidade_retorno'] = quantidade_retorno
         
         # Calcular valor total
         valor_total = 0
         for item in pedido['itens']:
             produto = next((p for p in produtos if p['id'] == item['produto_id']), None)
             if produto:
-                quantidade_vendida = item['quantidade_saida'] - item['quantidade_retorno']
+                quantidade_vendida = float(item['quantidade_saida']) - float(item['quantidade_retorno'])
                 valor_total += quantidade_vendida * float(produto['preco_venda'])
+        
+        # Salvar dados no arquivo
+        salvar_dados()
         
         return jsonify({
             "message": "Retorno registrado com sucesso",
@@ -145,37 +250,86 @@ def registrar_retorno():
         }), 200
     except Exception as e:
         print(f"Erro ao processar retorno: {e}")
+        traceback.print_exc()
         return jsonify({"message": f"Erro ao processar retorno: {str(e)}"}), 500
 
 @app.route('/api/pedidos/<int:pedido_id>/itens', methods=['GET'])
 def get_pedido_itens(pedido_id):
-    # Encontrar o pedido pelo ID
-    pedido = next((p for p in pedidos if p['id'] == pedido_id), None)
-    
-    if not pedido:
-        # Se não encontrar o pedido, retornar erro 404
-        return jsonify({"message": "Pedido não encontrado"}), 404
-    
-    # Preparar a lista de itens com informações completas
-    itens_completos = []
-    for item in pedido.get('itens', []):
-        produto_id = item.get('produto_id')
-        produto = next((p for p in produtos if p['id'] == produto_id), None)
+    try:
+        # Encontrar o pedido pelo ID
+        pedido = next((p for p in pedidos if p['id'] == pedido_id), None)
         
-        if produto:
-            itens_completos.append({
-                "id": produto_id,
-                "nome": produto.get('nome', ''),
-                "preco_venda": float(produto.get('preco_venda', 0.0)),  # Garantir que é um número
-                "quantidade_saida": item.get('quantidade_saida', 0),
-                "quantidade_retorno": item.get('quantidade_retorno', 0)
-            })
-    
-    return jsonify(itens_completos)
+        if not pedido:
+            # Se não encontrar o pedido, retornar erro 404
+            return jsonify({"message": "Pedido não encontrado"}), 404
+        
+        # Preparar a lista de itens com informações completas
+        itens_completos = []
+        for item in pedido.get('itens', []):
+            produto_id = item.get('produto_id')
+            produto = next((p for p in produtos if p['id'] == produto_id), None)
+            
+            if produto:
+                # Calcular quantidade vendida
+                quantidade_saida = float(item.get('quantidade_saida', 0))
+                quantidade_retorno = float(item.get('quantidade_retorno', 0))
+                quantidade_venda = quantidade_saida - quantidade_retorno
+                
+                # Calcular valor total do item
+                preco_venda = float(produto.get('preco_venda', 0.0))
+                valor_total_item = quantidade_venda * preco_venda
+                
+                # Formatar valores para exibição
+                if is_gelo_seco(produto_id):
+                    # Manter valores decimais para gelo seco
+                    quantidade_saida_formatada = quantidade_saida
+                    quantidade_retorno_formatada = quantidade_retorno
+                    quantidade_venda_formatada = quantidade_venda
+                else:
+                    # Converter para inteiros para outros produtos
+                    quantidade_saida_formatada = int(quantidade_saida)
+                    quantidade_retorno_formatada = int(quantidade_retorno)
+                    quantidade_venda_formatada = int(quantidade_venda)
+                
+                itens_completos.append({
+                    "id": produto_id,
+                    "nome": produto.get('nome', ''),
+                    "preco_venda": preco_venda,
+                    "quantidade_saida": quantidade_saida_formatada,
+                    "quantidade_retorno": quantidade_retorno_formatada,
+                    "quantidade_venda": quantidade_venda_formatada,
+                    "valor_total_item": valor_total_item
+                })
+        
+        return jsonify(itens_completos)
+    except Exception as e:
+        print(f"Erro ao buscar itens do pedido: {e}")
+        traceback.print_exc()
+        return jsonify({"message": f"Erro ao buscar itens do pedido: {str(e)}"}), 500
 
 @app.route('/api/pedidos', methods=['GET'])
 def get_pedidos():
-    return jsonify(pedidos)
+    try:
+        # Filtrar por status se fornecido
+        status = request.args.get('status')
+        if status:
+            if status == 'EM_ABERTO':
+                # Considerar pedidos com status 'saida' como em aberto
+                filtered_pedidos = [p for p in pedidos if p.get('status') == 'saida']
+            else:
+                filtered_pedidos = [p for p in pedidos if p.get('status') == status]
+            return jsonify(filtered_pedidos)
+        return jsonify(pedidos)
+    except Exception as e:
+        print(f"Erro ao buscar pedidos: {e}")
+        traceback.print_exc()
+        return jsonify({"message": f"Erro ao buscar pedidos: {str(e)}"}), 500
+
+# Rota de teste para verificar se o servidor está funcionando
+@app.route('/api/status', methods=['GET'])
+def get_status():
+    return jsonify({"status": "online", "message": "API Licimar funcionando corretamente"})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Permitir acesso de qualquer origem (0.0.0.0) e usar porta 5000
+    app.run(host='0.0.0.0', port=5000, debug=True)
