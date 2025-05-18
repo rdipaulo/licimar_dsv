@@ -52,7 +52,7 @@ def carregar_dados():
             print(f"Dados carregados com sucesso de {DB_FILE}")
         except Exception as e:
             print(f"Erro ao carregar dados: {e}")
-            # Não interrompe a execução, continua com os dados padrão
+            # Não interrompe a execução, continua com os dados padrao
 
 # Função para salvar dados no arquivo
 def salvar_dados():
