@@ -324,7 +324,36 @@
           "quantidade_retorno": 0.0
         }
       ]
+    },
+    {
+      "id": 11,
+      "vendedor_id": 2,
+      "vendedor_nome": "Roberto Peixoto",
+      "data_operacao": "2025-05-25T13:21:33.847415",
+      "status": "retorno",
+      "itens": [
+        {
+          "produto_id": 1,
+          "quantidade_saida": 4,
+          "quantidade_retorno": 2
+        },
+        {
+          "produto_id": 2,
+          "quantidade_saida": 5,
+          "quantidade_retorno": 3
+        },
+        {
+          "produto_id": 3,
+          "quantidade_saida": 5,
+          "quantidade_retorno": 2
+        },
+        {
+          "produto_id": 4,
+          "quantidade_saida": 2.1,
+          "quantidade_retorno": 0.0
+        }
+      ]
     }
   ],
-  "ultimo_id_pedido": 10
+  "ultimo_id_pedido": 11
 }
