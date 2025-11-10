@@ -8,8 +8,9 @@ WORKDIR /app
 # Copia package.json e package-lock.json (ou yarn.lock/pnpm-lock.yaml)
 COPY package*.json ./
 
-# Instala dependências
-RUN npm install
+# Instala dependências, usando --legacy-peer-deps para resolver conflitos
+# O problema de dependência do frontend é resolvido aqui
+RUN npm install --legacy-peer-deps
 
 # Copia o restante do código
 COPY . .
@@ -22,9 +23,6 @@ FROM nginx:stable-alpine as production
 
 # Copia o build do React para o diretório de serviço do Nginx
 COPY --from=build /app/dist /usr/share/nginx/html
-
-# Copia a configuração customizada do Nginx (se houver)
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expõe a porta 80 (padrão do Nginx)
 EXPOSE 80

@@ -1,5 +1,9 @@
 version: '3.8'
 
+x-volumes:
+  - &backend_volume ./backend/licimar_mvp_app:/app
+  - &frontend_volume ./frontend/licimar_mvp_frontend:/app
+
 services:
   db:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -20,7 +24,7 @@ services:
 
   backend:
     build:
-      context: ./licimar_dsv/backend/licimar_mvp_app
+      context: ./backend/licimar_mvp_app
       dockerfile: Dockerfile
     restart: always
     environment:
@@ -29,7 +33,7 @@ services:
       DATABASE_URL: mssql+pyodbc://sa:LicimarPassword123!@db:1433/licimar_db?driver=ODBC+Driver+17+for+SQL+Server
       CORS_ORIGINS: http://localhost:3000,http://localhost:5173
     volumes:
-      - ./licimar_dsv/backend/licimar_mvp_app:/app
+      - *backend_volume
     ports:
       - "5000:5000"
     depends_on:
@@ -44,13 +48,13 @@ services:
 
   frontend:
     build:
-      context: ./licimar_dsv/frontend/licimar_mvp_frontend
+      context: ./frontend/licimar_mvp_frontend
       dockerfile: Dockerfile
     restart: always
     environment:
       VITE_API_URL: http://localhost:5000
     volumes:
-      - ./licimar_dsv/frontend/licimar_mvp_frontend:/app
+      - *frontend_volume
       - /app/node_modules
     ports:
       - "3000:3000"
