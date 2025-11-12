@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend/licimar_mvp_app
+      dockerfile: Dockerfile
+    container_name: licimar_backend
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mapeia o código e o volume para persistir o banco de dados SQLite
+      - ./backend/licimar_mvp_app:/app
+      - sqlite_data:/app/instance
+    env_file:
+      - ./backend/licimar_mvp_app/.env
+    restart: always
+    command: gunicorn -w 4 -b 0.0.0.0:5000 src.main:create_app()
+
+  frontend:
+    build:
+      context: ./frontend/licimar_mvp_frontend
+      dockerfile: Dockerfile
+    container_name: licimar_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/licimar_mvp_frontend:/app
+      - /app/node_modules
+    env_file:
+      - ./frontend/licimar_mvp_frontend/.env
+    restart: always
+    depends_on:
+      - backend
+
+volumes:
+  sqlite_data:
+    driver: local

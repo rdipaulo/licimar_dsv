@@ -1,0 +1,265 @@
+.tela-retorno {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.tela-retorno h1 {
+  color: #333;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.tela-retorno h2 {
+  color: #444;
+  margin: 15px 0;
+}
+
+.erro {
+  color: #d9534f;
+  background-color: #f2dede;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.selecao-pedido {
+  margin-bottom: 20px;
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+}
+
+.selecao-pedido label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.selecao-pedido select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.tabela-container {
+  margin-top: 20px;
+  overflow-x: auto;
+}
+
+.tabela-retorno {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+}
+
+.tabela-retorno th, 
+.tabela-retorno td {
+  padding: 12px 15px;
+  text-align: center;
+  border: 1px solid #ddd;
+}
+
+.tabela-retorno th {
+  background-color: #FFC72C;
+  color: #27251F;
+  font-weight: bold;
+}
+
+.tabela-retorno tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.tabela-retorno tbody tr:hover {
+  background-color: #f1f1f1;
+}
+
+.tabela-retorno input {
+  width: 70px;
+  padding: 8px;
+  border: 2px solid #007bff;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.tabela-retorno tfoot {
+  font-weight: bold;
+}
+
+.tabela-retorno tfoot .valor-total-label {
+  text-align: right;
+  font-size: 16px;
+}
+
+.tabela-retorno tfoot .valor-total-valor {
+  background-color: #e8f4f8;
+  font-size: 16px;
+}
+
+.input-quantidade {
+  padding: 8px;
+  border: 2px solid #007bff;
+  border-radius: 4px;
+  font-size: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #fff;
+}
+
+.input-quantidade:focus {
+  outline: none;
+  border-color: #0056b3;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+.botao-finalizar {
+  background-color: #FFC72C;
+  color: #27251F;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  margin-top: 20px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.botao-finalizar:hover {
+  background-color: #e6b325;
+}
+
+.resultado {
+  margin-top: 30px;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+  text-align: center;
+  border: 2px solid #FFC72C;
+}
+
+.resultado h2 {
+  color: #27251F;
+  margin: 0;
+  font-size: 24px;
+}
+
+/* Estilos para o resumo do pedido */
+.resumo-pedido {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.resumo-cabecalho {
+  margin-bottom: 20px;
+  border-bottom: 2px solid #FFC72C;
+  padding-bottom: 10px;
+}
+
+.resumo-cabecalho h2 {
+  color: #333;
+  margin-top: 0;
+  text-align: center;
+}
+
+.resumo-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.resumo-info p {
+  margin: 5px 0;
+}
+
+.tabela-resumo {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+}
+
+.tabela-resumo th, 
+.tabela-resumo td {
+  padding: 10px;
+  text-align: center;
+  border: 1px solid #ddd;
+}
+
+.tabela-resumo th {
+  background-color: #FFC72C;
+  color: #27251F;
+}
+
+.tabela-resumo tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.resumo-acoes {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.botao-imprimir, 
+.botao-fechar {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.botao-imprimir {
+  background-color: #28a745;
+  color: white;
+}
+
+.botao-imprimir:hover {
+  background-color: #218838;
+}
+
+.botao-fechar {
+  background-color: #6c757d;
+  color: white;
+}
+
+.botao-fechar:hover {
+  background-color: #5a6268;
+}
+
+/* Estilos para impressão */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  
+  .resumo-pedido, 
+  .resumo-pedido * {
+    visibility: visible;
+  }
+  
+  .resumo-pedido {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    box-shadow: none;
+  }
+  
+  .resumo-acoes {
+    display: none;
+  }
+}

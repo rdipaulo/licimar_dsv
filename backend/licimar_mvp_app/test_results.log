@@ -1,0 +1,43 @@
+==========================================
+TESTE DA API LICIMAR MVP
+==========================================
+
+==========================================
+1. TESTES DE STATUS
+==========================================
+[1;33mTestando:[0m Status da API
+  Endpoint: GET /
+  Resposta: {
+  "environment": "development",
+  "message": "API Licimar - Sistema de Gest\u00e3o de Ambulantes",
+  "status": "online",
+  "version": "2.0.0"
+}
+
+{
+  "environment": "development",
+  "message": "API Licimar - Sistema de Gest\u00e3o de Ambulantes",
+  "status": "online",
+  "version": "2.0.0"
+}
+[1;33mTestando:[0m Status detalhado
+  Endpoint: GET /api/status
+  Resposta: {
+  "environment": "development",
+  "message": "API Licimar funcionando corretamente",
+  "status": "online",
+  "version": "2.0.0"
+}
+
+{
+  "environment": "development",
+  "message": "API Licimar funcionando corretamente",
+  "status": "online",
+  "version": "2.0.0"
+}
+
+==========================================
+2. TESTES DE AUTENTICAÇÃO
+==========================================
+[1;33mFazendo login como admin...[0m
+[0;31mERRO: Não foi possível obter o token de autenticação[0m
