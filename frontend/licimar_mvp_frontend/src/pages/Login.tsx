@@ -1,147 +1,164 @@
-// Página de login
-
 import React, { useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../components/ui/form';
+import { AlertCircle, LogIn } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
-import { Loader2, LogIn } from 'lucide-react';
-import { LoginForm } from '../types';
 
-export const Login: React.FC = () => {
-  const { login, isAuthenticated, isLoading } = useAuth();
-  const location = useLocation();
-  const [formData, setFormData] = useState<LoginForm>({
-    username: '',
-    password: ''
+/**
+ * Schema de validação para o formulário de login
+ */
+const loginSchema = z.object({
+  username: z.string()
+    .min(1, 'Usuário é obrigatório')
+    .min(3, 'Usuário deve ter pelo menos 3 caracteres'),
+  password: z.string()
+    .min(1, 'Senha é obrigatória')
+    .min(6, 'Senha deve ter pelo menos 6 caracteres'),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
+
+/**
+ * Página de Login
+ * Permite que o usuário faça login com suas credenciais
+ */
+const LoginPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { login, isLoading } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+
+  const form = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      username: '',
+      password: '',
+    },
   });
-  const [error, setError] = useState<string>('');
-  const [submitting, setSubmitting] = useState(false);
 
-  // Redireciona se já autenticado
-  if (isAuthenticated) {
-    const from = location.state?.from?.pathname || '/';
-    return <Navigate to={from} replace />;
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSubmitting(true);
-
+  const onSubmit = async (data: LoginFormData) => {
     try {
-      await login(formData);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Erro ao fazer login');
-    } finally {
-      setSubmitting(false);
+      setError(null);
+      await login(data);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao fazer login');
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Carregando...</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Sistema Licimar
-          </h1>
-          <p className="text-gray-600">
-            Gestão de Ambulantes e Produtos
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-full mb-4">
+            <span className="text-2xl font-bold text-white">L</span>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900">Licimar MVP</h1>
+          <p className="text-gray-600 mt-2">Sistema de Gestão de Ambulantes</p>
         </div>
 
-        <Card>
+        {/* Card de Login */}
+        <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <LogIn className="h-5 w-5" />
-              <span>Entrar no Sistema</span>
+              <span>Fazer Login</span>
             </CardTitle>
             <CardDescription>
-              Digite suas credenciais para acessar o sistema
+              Insira suas credenciais para acessar o sistema
             </CardDescription>
           </CardHeader>
+
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+            {/* Mensagem de erro */}
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-              <div className="space-y-2">
-                <Label htmlFor="username">Usuário</Label>
-                <Input
-                  id="username"
+            {/* Formulário */}
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                {/* Campo de Usuário */}
+                <FormField
+                  control={form.control}
                   name="username"
-                  type="text"
-                  value={formData.username}
-                  onChange={handleChange}
-                  required
-                  placeholder="Digite seu usuário"
-                  disabled={submitting}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Usuário</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Digite seu usuário"
+                          {...field}
+                          disabled={isLoading}
+                          autoComplete="username"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
+                {/* Campo de Senha */}
+                <FormField
+                  control={form.control}
                   name="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  placeholder="Digite sua senha"
-                  disabled={submitting}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Senha</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="Digite sua senha"
+                          {...field}
+                          disabled={isLoading}
+                          autoComplete="current-password"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
+
+                {/* Botão de Submit */}
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
+                  size="lg"
+                >
+                  {isLoading ? 'Entrando...' : 'Entrar'}
+                </Button>
+              </form>
+            </Form>
+
+            {/* Credenciais de teste */}
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm font-semibold text-blue-900 mb-2">Credenciais de Teste:</p>
+              <div className="space-y-1 text-sm text-blue-800">
+                <p><strong>Admin:</strong> admin / admin123</p>
+                <p><strong>Operador:</strong> operador / operador123</p>
               </div>
-
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={submitting}
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Entrando...
-                  </>
-                ) : (
-                  <>
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Entrar
-                  </>
-                )}
-              </Button>
-            </form>
-
-            <div className="mt-6 text-center text-sm text-gray-600">
-              <p>Credenciais padrão:</p>
-              <p><strong>Usuário:</strong> admin</p>
-              <p><strong>Senha:</strong> admin123</p>
             </div>
           </CardContent>
         </Card>
+
+        {/* Footer */}
+        <p className="text-center text-sm text-gray-600 mt-6">
+          © 2025 Licimar MVP. Todos os direitos reservados.
+        </p>
       </div>
     </div>
   );
 };
+
+export default LoginPage;

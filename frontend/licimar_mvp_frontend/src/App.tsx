@@ -1,35 +1,112 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'sonner';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import LoginPage from './pages/Login';
+import DashboardPage from './pages/Dashboard';
+import AmbulantesPag from './pages/Ambulantes';
+import LoadingSpinner from './components/LoadingSpinner';
 
-function App() {
-  const [count, setCount] = useState(0)
+/**
+ * Componente de rota protegida
+ * Redireciona para login se o usuário não estiver autenticado
+ */
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+/**
+ * Componente de rota pública
+ * Redireciona para dashboard se o usuário já estiver autenticado
+ */
+const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+/**
+ * Componente principal da aplicação
+ * Define as rotas e o provedor de autenticação
+ */
+const AppContent: React.FC = () => {
+  const { isLoading } = useAuth();
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <Routes>
+      {/* Rotas públicas */}
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <LoginPage />
+          </PublicRoute>
+        }
+      />
 
-export default App
+      {/* Rotas protegidas */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/ambulantes"
+        element={
+          <ProtectedRoute>
+            <AmbulantesPag />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Rota padrão */}
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+      {/* Rota 404 */}
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+    </Routes>
+  );
+};
+
+/**
+ * Componente raiz da aplicação
+ * Envolve tudo com o provedor de autenticação e toast
+ */
+const App: React.FC = () => {
+  return (
+    <Router>
+      <AuthProvider>
+        <AppContent />
+        <Toaster position="top-right" />
+      </AuthProvider>
+    </Router>
+  );
+};
+
+export default App;
