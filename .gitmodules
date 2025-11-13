@@ -1,0 +1,3 @@
+[submodule "extern/openmanus"]
+	path = extern/openmanus
+	url = https://github.com/FoundationAgents/OpenManus.git
