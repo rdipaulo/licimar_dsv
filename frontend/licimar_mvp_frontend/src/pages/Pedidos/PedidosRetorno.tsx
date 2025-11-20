@@ -1,74 +1,38 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Pedido,
-  ItemPedido,
-  PedidoRetornoForm,
-  PaginatedResponse,
-} from '../../types';
-import { api } from '../../services/api';
+// Caminho: src/pages/Pedidos/PedidosRetorno.tsx
+
+import { useState, useEffect, useMemo } from 'react';
 import { MainLayout } from '../../components/MainLayout';
+import { api } from '../../services/api';
+import { Pedido, ItemPedido } from '../../types';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { ScrollArea } from '../../components/ui/scroll-area';
-import { Separator } from '../../components/ui/separator';
-import { toast } from '../../components/ui/use-toast';
-import { Loader2, Calculator, ListOrdered, CheckCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { useToast } from '../../hooks/use-toast'; // ✅ CAMINHO CORRETO
+import { Loader2 } from 'lucide-react';
 
-// --- Schemas de Validação ---
-const itemRetornoSchema = z.object({
-  produto_id: z.number(),
-  quantidade_retorno: z.number().min(0, 'A quantidade deve ser positiva.'),
-});
+interface PedidoRetornoPayload {
+  itens_retorno: {
+    item_id: number;
+    quantidade_retorno: number;
+  }[];
+}
 
-const pedidoRetornoSchema = z.object({
-  itens_retorno: z.array(itemRetornoSchema),
-});
-
-type PedidoRetornoFormData = z.infer<typeof pedidoRetornoSchema>;
-
-// --- Componente Principal da Tela de Retorno ---
-export const PedidosRetorno: React.FC = () => {
+export default function PedidosRetorno() {
+  const { toast } = useToast();
   const [pedidosEmAberto, setPedidosEmAberto] = useState<Pedido[]>([]);
-  const [pedidoSelecionado, setPedidoSelecionado] = useState<Pedido | null>(null);
+  const [selectedPedido, setSelectedPedido] = useState<Pedido | null>(null);
+  const [retornoQuantities, setRetornoQuantities] = useState<Record<number, number>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [valorFinal, setValorFinal] = useState<number | null>(null);
 
-  const {
-    handleSubmit,
-    control,
-    setValue,
-    watch,
-    reset,
-    formState: { errors },
-  } = useForm<PedidoRetornoFormData>({
-    resolver: zodResolver(pedidoRetornoSchema),
-    defaultValues: {
-      itens_retorno: [],
-    },
-  });
+  useEffect(() => {
+    fetchPedidosEmAberto();
+  }, []);
 
-  const { fields, replace } = useFieldArray({
-    control,
-    name: 'itens_retorno',
-  });
-
-  const watchedItensRetorno = watch('itens_retorno');
-
-  // Carregar pedidos em aberto
   const fetchPedidosEmAberto = async () => {
+    setIsLoading(true);
     try {
-      const response = await api.get<any>('/pedidos', {
-        params: { status: 'saida', per_page: 100 }, // Ajustar per_page conforme necessário
-      });
-      const pedidosData = response.data.items || response.data;
-      setPedidosEmAberto(pedidosData);
+      const response = await api.get<Pedido[]>('/pedidos', { params: { status: 'saida' } });
+      setPedidosEmAberto(response.data);
     } catch (error) {
       toast({
         title: 'Erro ao carregar pedidos',
@@ -80,96 +44,74 @@ export const PedidosRetorno: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchPedidosEmAberto();
-  }, []);
-
-  // Quando um pedido é selecionado
-  useEffect(() => {
-    if (pedidoSelecionado) {
-      const itensParaForm = pedidoSelecionado.itens.map(item => ({
-        produto_id: item.produto_id,
-        quantidade_retorno: item.quantidade_retorno || 0, // Inicializa com 0 ou valor existente
-      }));
-      replace(itensParaForm);
-      setValorFinal(null); // Reseta o valor final ao selecionar novo pedido
-    } else {
-      replace([]);
-    }
-  }, [pedidoSelecionado, replace]);
-
-  // Lógica para calcular quantidades vendidas e perdas (apenas visual)
-  const itensComCalculo = useMemo(() => {
-    if (!pedidoSelecionado) return [];
-
-    return pedidoSelecionado.itens.map((itemOriginal, index) => {
-      const itemRetorno = watchedItensRetorno.find(
-        (item) => item.produto_id === itemOriginal.produto_id
-      );
-      const quantidadeRetorno = itemRetorno?.quantidade_retorno || 0;
-      const quantidadeSaida = itemOriginal.quantidade_saida;
-      const quantidadeVendida = Math.max(0, quantidadeSaida - quantidadeRetorno);
-      const quantidadePerda = Math.max(0, quantidadeRetorno - quantidadeSaida); // Simplificado: se retornou mais do que saiu, é erro ou perda
-
-      return {
-        ...itemOriginal,
-        quantidadeRetorno,
-        quantidadeVendida,
-        quantidadePerda,
-        nome_produto: itemOriginal.produto_nome, // Assumindo que o Pedido retornado pela API tem o nome do produto
-        preco_unitario: itemOriginal.preco_unitario, // Assumindo que o Pedido retornado pela API tem o preço
-      };
-    });
-  }, [pedidoSelecionado, watchedItensRetorno]);
-
-  // Submissão do formulário (Registro de Retorno e Cálculo)
-  const onSubmit = async (data: PedidoRetornoFormData) => {
-    if (!pedidoSelecionado) return;
-
-    setIsSubmitting(true);
-    try {
-      const payload: PedidoRetornoForm = {
-        itens: data.itens_retorno.map(item => ({
-          produto_id: item.produto_id,
-          quantidade_retorno: item.quantidade_retorno,
-        })),
-      };
-
-      // Endpoint para registro de retorno e cálculo
-      const response = await api.post<Pedido>(`/pedidos/${pedidoSelecionado.id}/retorno`, payload);
-
-      const pedidoAtualizado = response.data.pedido || response.data;
-      setValorFinal(pedidoAtualizado.total || 0);
-      setPedidoSelecionado(pedidoAtualizado); // Atualiza o pedido com o status finalizado
-      
-      toast({
-        title: 'Sucesso!',
-        description: `Cálculo finalizado. Total a pagar: R$ ${pedidoAtualizado.total?.toFixed(2)}`,
-      });
-
-      // Recarrega a lista de pedidos em aberto
-      await fetchPedidosEmAberto();
-      
-    } catch (error) {
-      toast({
-        title: 'Erro ao finalizar pedido',
-        description: 'Ocorreu um erro ao tentar registrar o retorno e calcular o valor final.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleSelectPedido = (pedido: Pedido) => {
+    setSelectedPedido(pedido);
+    const initialRetorno = pedido.itens.reduce((acc, item) => {
+      acc[item.id!] = 0;
+      return acc;
+    }, {} as Record<number, number>);
+    setRetornoQuantities(initialRetorno);
   };
 
-  const handleSelectPedido = (pedido: Pedido) => {
-    setPedidoSelecionado(pedido);
-    setValorFinal(null);
+  const handleRetornoChange = (itemId: number, value: string) => {
+    const quantidade = parseFloat(value);
+    setRetornoQuantities(prev => ({
+      ...prev,
+      [itemId]: isNaN(quantidade) || quantidade < 0 ? 0 : quantidade,
+    }));
+  };
+
+  const calculateItemSummary = (item: ItemPedido) => {
+    const quantidadeRetorno = retornoQuantities[item.id!] || 0;
+    const quantidadeSaida = item.quantidade_saida;
+    const quantidadeVendida = Math.max(0, quantidadeSaida - quantidadeRetorno);
+    const valorTotal = quantidadeVendida * item.preco_unitario;
+
+    return {
+      quantidadeVendida,
+      valorTotal,
+      maxRetorno: quantidadeSaida,
+    };
+  };
+
+  const totalGeral = useMemo(() => {
+    if (!selectedPedido) return 0;
+    return selectedPedido.itens.reduce((sum, item) => {
+      const { valorTotal } = calculateItemSummary(item);
+      return sum + valorTotal;
+    }, 0);
+  }, [selectedPedido, retornoQuantities]);
+
+  const handleFinalizarRetorno = async () => {
+    if (!selectedPedido) return;
+
+    const itensRetornoPayload: PedidoRetornoPayload['itens_retorno'] = selectedPedido.itens.map(item => ({
+      item_id: item.id!,
+      quantidade_retorno: retornoQuantities[item.id!] || 0,
+    }));
+
+    try {
+      await api.post(`/pedidos/${selectedPedido.id}/retorno`, { itens_retorno: itensRetornoPayload });
+      toast({
+        title: 'Sucesso',
+        description: `Retorno do Pedido #${selectedPedido.id} registrado e finalizado.`,
+      });
+      setSelectedPedido(null);
+      setRetornoQuantities({});
+      fetchPedidosEmAberto();
+    } catch (error) {
+      toast({
+        title: 'Erro ao finalizar retorno',
+        description: 'Ocorreu um erro ao tentar registrar o retorno.',
+        variant: 'destructive',
+      });
+    }
   };
 
   if (isLoading) {
     return (
-      <MainLayout title="Registro de Retorno/Cálculo">
-        <div className="flex justify-center items-center h-64">
+      <MainLayout title="Registro de Retorno/Cálculo" description="Carregando pedidos em aberto...">
+        <div className="flex justify-center items-center h-full">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       </MainLayout>
@@ -177,130 +119,108 @@ export const PedidosRetorno: React.FC = () => {
   }
 
   return (
-    <MainLayout title="Registro de Retorno/Cálculo">
-      <div className="flex h-full space-x-4">
+    <MainLayout title="Registro de Retorno/Cálculo" description="Registre o retorno de produtos e calcule o valor final devido pelo ambulante.">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
         {/* Coluna de Pedidos em Aberto */}
-        <Card className="w-80 flex-shrink-0">
+        <Card className="lg:col-span-1 overflow-y-auto">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center">
-              <ListOrdered className="h-5 w-5 mr-2" /> Pedidos em Aberto
-            </CardTitle>
+            <CardTitle>Pedidos em Aberto ({pedidosEmAberto.length})</CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
-            <ScrollArea className="h-[calc(100vh-200px)]">
-              {pedidosEmAberto.length === 0 ? (
-                <p className="p-4 text-sm text-muted-foreground">Nenhum pedido em aberto.</p>
-              ) : (
-                pedidosEmAberto.map(pedido => (
-                  <div
-                    key={pedido.id}
-                    className={`p-4 border-b cursor-pointer hover:bg-accent ${
-                      pedidoSelecionado?.id === pedido.id ? 'bg-primary/10 font-semibold' : ''
-                    }`}
-                    onClick={() => handleSelectPedido(pedido)}
-                  >
-                    <p className="text-sm">Pedido #{pedido.id}</p>
-                    <p className="text-xs text-muted-foreground">{pedido.ambulante_nome}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Saída: {format(new Date(pedido.data_operacao), 'dd/MM/yyyy HH:mm')}
-                    </p>
-                  </div>
-                ))
-              )}
-            </ScrollArea>
+          <CardContent className="space-y-2">
+            {pedidosEmAberto.length === 0 ? (
+              <p className="text-center text-muted-foreground">Nenhum pedido em aberto.</p>
+            ) : (
+              pedidosEmAberto.map(pedido => (
+                <div
+                  key={pedido.id}
+                  className={`p-3 border rounded-md cursor-pointer transition-colors ${selectedPedido?.id === pedido.id ? 'bg-primary/10 border-primary' : 'hover:bg-gray-50'}`}
+                  onClick={() => handleSelectPedido(pedido)}
+                >
+                  <p className="font-semibold">Pedido #{pedido.id}</p>
+                  <p className="text-sm text-muted-foreground">Ambulante: {pedido.ambulante_nome}</p>
+                  <p className="text-xs text-muted-foreground">Saída: {new Date(pedido.data_saida).toLocaleDateString()}</p>
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
 
-        {/* Coluna de Detalhes e Retorno */}
-        <Card className="flex-1">
+        {/* Coluna de Detalhes e Cálculo */}
+        <Card className="lg:col-span-2 flex flex-col">
           <CardHeader>
-            <CardTitle className="text-xl">
-              {pedidoSelecionado ? `Detalhes do Pedido #${pedidoSelecionado.id}` : 'Selecione um Pedido'}
+            <CardTitle>
+              {selectedPedido ? `Detalhes do Pedido #${selectedPedido.id}` : 'Selecione um Pedido'}
             </CardTitle>
-            {pedidoSelecionado && (
-              <p className="text-sm text-muted-foreground">
-                Ambulante: {pedidoSelecionado.ambulante_nome} | Status: {pedidoSelecionado.status}
-              </p>
-            )}
           </CardHeader>
-          <CardContent>
-            {pedidoSelecionado && pedidoSelecionado.status !== 'finalizado' ? (
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <ScrollArea className="h-[calc(100vh-350px)] pr-4">
-                  <div className="space-y-4">
-                    {itensComCalculo.map((item, index) => (
-                      <div key={item.produto_id} className="border p-3 rounded-lg">
-                        <p className="font-semibold">{item.nome_produto}</p>
-                        <div className="grid grid-cols-3 gap-4 mt-2">
-                          <div>
-                            <Label className="text-xs">Saída</Label>
-                            <p className="font-medium">{item.quantidade_saida}</p>
-                          </div>
-                          <div>
-                            <Label htmlFor={`retorno-${item.produto_id}`} className="text-xs">
-                              Retorno
-                            </Label>
-                            <Input
-                              id={`retorno-${item.produto_id}`}
-                              type={item.nome_produto?.toLowerCase().includes('gelo seco') ? 'number' : 'number'}
-                              step={item.nome_produto?.toLowerCase().includes('gelo seco') ? '0.1' : '1'}
-                              min="0"
-                              {...control.register(`itens_retorno.${index}.quantidade_retorno`, {
-                                valueAsNumber: true,
-                              })}
-                              className="h-8"
-                            />
-                            {errors.itens_retorno?.[index]?.quantidade_retorno && (
-                              <p className="text-xs text-red-500">
-                                {errors.itens_retorno[index].quantidade_retorno.message}
-                              </p>
-                            )}
-                          </div>
-                          <div>
-                            <Label className="text-xs">Vendido (Visual)</Label>
-                            <p className="font-medium text-green-600">{item.quantidadeVendida}</p>
-                          </div>
+          <CardContent className="flex-grow flex flex-col">
+            {!selectedPedido ? (
+              <p className="text-center text-muted-foreground flex-grow flex items-center justify-center">
+                Selecione um pedido na lista ao lado para registrar o retorno.
+              </p>
+            ) : (
+              <>
+                <div className="mb-4">
+                  <p>
+                    <strong>Ambulante:</strong> {selectedPedido.ambulante_nome}
+                  </p>
+                  <p>
+                    <strong>Data de Saída:</strong> {new Date(selectedPedido.data_saida).toLocaleString()}
+                  </p>
+                </div>
+
+                <div className="flex-grow overflow-y-auto space-y-4 border p-4 rounded-md">
+                  <h3 className="text-lg font-semibold border-b pb-2">Itens para Retorno</h3>
+                  {selectedPedido.itens.map(item => {
+                    const { quantidadeVendida, valorTotal, maxRetorno } = calculateItemSummary(item);
+                    return (
+                      <div key={item.id} className="grid grid-cols-5 gap-4 items-center border-b pb-3">
+                        <div className="col-span-2">
+                          <p className="font-medium">{item.produto_nome}</p>
+                          <p className="text-sm text-muted-foreground">Saída: {item.quantidade_saida}</p>
+                          <p className="text-sm text-muted-foreground">Preço Unitário: R$ {item.preco_unitario.toFixed(2)}</p>
+                        </div>
+                        <div className="col-span-1">
+                          <label className="text-sm font-medium">Retorno</label>
+                          <Input
+                            type="number"
+                            step={0.001}
+                            min={0}
+                            max={maxRetorno}
+                            value={retornoQuantities[item.id!] || 0}
+                            onChange={e => handleRetornoChange(item.id!, e.target.value)}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div className="col-span-1 text-center">
+                          <p className="text-sm font-medium">Vendido</p>
+                          <p className="font-semibold">{quantidadeVendida.toFixed(3)}</p>
+                        </div>
+                        <div className="col-span-1 text-right">
+                          <p className="text-sm font-medium">Total</p>
+                          <p className="font-bold text-primary">R$ {valorTotal.toFixed(2)}</p>
                         </div>
                       </div>
-                    ))}
+                    );
+                  })}
+                </div>
+
+                <div className="mt-4 pt-4 border-t">
+                  <div className="flex justify-between text-2xl font-bold mb-4">
+                    <span>Total a Pagar:</span>
+                    <span>R$ {totalGeral.toFixed(2)}</span>
                   </div>
-                </ScrollArea>
-
-                <Separator />
-
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isSubmitting || itensComCalculo.length === 0}
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Calculator className="mr-2 h-4 w-4" /> Registrar Retorno e Calcular
-                    </>
-                  )}
-                </Button>
-              </form>
-            ) : pedidoSelecionado && pedidoSelecionado.status === 'finalizado' ? (
-              <div className="text-center p-8 space-y-4">
-                <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
-                <h3 className="text-xl font-semibold">Pedido Finalizado</h3>
-                <p className="text-lg">
-                  Valor Total a Pagar: <span className="font-bold text-green-600">R$ {pedidoSelecionado.total?.toFixed(2)}</span>
-                </p>
-                <Button onClick={() => setPedidoSelecionado(null)}>Novo Cálculo</Button>
-              </div>
-            ) : (
-              <p className="text-center text-muted-foreground p-8">
-                Utilize a lista à esquerda para selecionar um pedido em aberto.
-              </p>
+                  <Button
+                    onClick={handleFinalizarRetorno}
+                    className="w-full py-6 text-lg"
+                  >
+                    Registrar Retorno e Finalizar Pedido
+                  </Button>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
       </div>
     </MainLayout>
   );
-};
-
-export default PedidosRetorno;
+}
