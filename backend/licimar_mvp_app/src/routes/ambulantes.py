@@ -4,13 +4,13 @@ Rotas para gerenciamento de ambulantes
 from flask import Blueprint, request, jsonify, current_app
 from ..models import Ambulante
 from ..database import db
-from ..utils.decorators import admin_required, log_action
+from ..utils.decorators import admin_required, log_action, token_required
 from ..utils.helpers import validate_email, validate_cpf, validate_phone, sanitize_string, paginate_query
 
 ambulantes_bp = Blueprint('ambulantes', __name__)
 
 @ambulantes_bp.route('', methods=['GET'])
-@admin_required
+@token_required
 def get_ambulantes():
     """
     Lista todos os ambulantes com paginação e filtros

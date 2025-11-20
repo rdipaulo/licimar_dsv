@@ -22,7 +22,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, onLogout }) => {
     { label: 'Dashboard', icon: FileText, href: '/dashboard' },
     { label: 'Ambulantes', icon: Truck, href: '/ambulantes' },
     { label: 'Produtos', icon: Package, href: '/produtos' },
-    { label: 'Pedidos', icon: BarChart3, href: '/pedidos' },
+    { label: 'Pedidos', icon: BarChart3, href: '/pedidos', subItems: [
+      { label: 'Registro de Saída', icon: Truck, href: '/pedidos/saida' },
+      { label: 'Registro de Retorno', icon: FileText, href: '/pedidos/retorno' },
+    ] },
     { label: 'Usuários', icon: Users, href: '/usuarios', adminOnly: true },
     { label: 'Configurações', icon: Settings, href: '/configuracoes', adminOnly: true },
   ];
@@ -32,7 +35,45 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, onLogout }) => {
     item => !item.adminOnly || user?.role === 'admin'
   );
 
-  const isActive = (href: string) => location.pathname === href;
+  const isActive = (href: string) => location.pathname === href || (menuItems.find(item => item.href === href)?.subItems?.some(sub => location.pathname.startsWith(sub.href)) && location.pathname.startsWith(href));
+
+  const isSubItemActive = (href: string) => location.pathname.startsWith(href);
+
+  const renderMenuItem = (item: typeof menuItems[0]) => (
+    <div key={item.label}>
+      <Link
+        to={item.href}
+        className={`flex items-center space-x-3 p-3 rounded-lg transition ${
+          isActive(item.href)
+            ? 'bg-indigo-700 text-white'
+            : 'hover:bg-indigo-800 text-indigo-100'
+        }`}
+        title={item.label}
+      >
+        <item.icon size={20} className="flex-shrink-0" />
+        {isOpen && <span className="truncate">{item.label}</span>}
+      </Link>
+      {item.subItems && isOpen && (
+        <div className="pl-4 pt-1 space-y-1">
+          {item.subItems.map(subItem => (
+            <Link
+              key={subItem.label}
+              to={subItem.href}
+              className={`flex items-center space-x-3 p-2 rounded-lg transition text-sm ${
+                isSubItemActive(subItem.href)
+                  ? 'bg-indigo-600 text-white'
+                  : 'hover:bg-indigo-700 text-indigo-200'
+              }`}
+              title={subItem.label}
+            >
+              <subItem.icon size={16} className="flex-shrink-0" />
+              <span className="truncate">{subItem.label}</span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <aside
@@ -61,21 +102,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, onLogout }) => {
 
       {/* Menu Items */}
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-        {visibleMenuItems.map((item) => (
-          <Link
-            key={item.label}
-            to={item.href}
-            className={`flex items-center space-x-3 p-3 rounded-lg transition ${
-              isActive(item.href)
-                ? 'bg-indigo-700 text-white'
-                : 'hover:bg-indigo-800 text-indigo-100'
-            }`}
-            title={item.label}
-          >
-            <item.icon size={20} className="flex-shrink-0" />
-            {isOpen && <span className="truncate">{item.label}</span>}
-          </Link>
-        ))}
+        {visibleMenuItems.map(renderMenuItem)}
       </nav>
 
       {/* User Info & Logout */}

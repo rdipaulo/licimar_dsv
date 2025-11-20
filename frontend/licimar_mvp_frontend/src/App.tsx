@@ -5,6 +5,8 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/Login';
 import DashboardPage from './pages/Dashboard';
 import AmbulantesPag from './pages/Ambulantes';
+import PedidosSaida from './pages/Pedidos/PedidosSaida';
+import PedidosRetorno from './pages/Pedidos/PedidosRetorno';
 import LoadingSpinner from './components/LoadingSpinner';
 
 /**
@@ -81,6 +83,24 @@ const AppContent: React.FC = () => {
         element={
           <ProtectedRoute>
             <AmbulantesPag />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/pedidos/saida"
+        element={
+          <ProtectedRoute>
+            <PedidosSaida />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/pedidos/retorno"
+        element={
+          <ProtectedRoute>
+            <PedidosRetorno />
           </ProtectedRoute>
         }
       />

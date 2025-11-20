@@ -47,4 +47,5 @@ const MainLayout: React.FC<MainLayoutProps> = ({ title, children }) => {
   );
 };
 
+export { MainLayout };
 export default MainLayout;
