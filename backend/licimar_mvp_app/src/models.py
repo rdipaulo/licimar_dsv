@@ -20,13 +20,11 @@ class User(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     def set_password(self, password):
-        """Define a senha do usuário com hash"""
         self.password_hash = generate_password_hash(password)
-    
+
     def check_password(self, password):
-        """Verifica se a senha está correta"""
         return check_password_hash(self.password_hash, password)
-    
+
     def is_admin(self):
         """Verifica se o usuário é administrador"""
         return self.role == 'admin'
@@ -112,6 +110,7 @@ class Produto(db.Model):
     descricao = db.Column(db.Text)
     active = db.Column(db.Boolean, default=True, nullable=False)
     estoque_minimo = db.Column(db.Integer, default=10)  # Para alertas de estoque baixo
+    nao_devolve = db.Column(db.Boolean, default=False, nullable=False) # Se o produto não pode ser devolvido (ex: Gelo Seco)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -136,6 +135,7 @@ class Produto(db.Model):
             'active': self.active,
             'estoque_minimo': self.estoque_minimo,
             'estoque_baixo': self.is_estoque_baixo(),
+            'nao_devolve': self.nao_devolve,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

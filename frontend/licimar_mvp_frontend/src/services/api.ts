@@ -407,6 +407,15 @@ class ApiService {
     return this.handleResponse(response);
   }
 
+  async updatePedidoSaida(id: number, data: PedidoSaidaForm): Promise<{ message: string; pedido: Pedido }> {
+    const response = await fetch(`${API_BASE_URL}/api/pedidos/${id}/saida`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data)
+    });
+    return this.handleResponse(response);
+  }
+
   async registrarRetorno(id: number, data: PedidoRetornoForm): Promise<{ message: string; pedido: Pedido }> {
     const response = await fetch(`${API_BASE_URL}/api/pedidos/${id}/retorno`, {
       method: 'POST',
@@ -430,6 +439,20 @@ class ApiService {
       headers: this.getAuthHeaders()
     });
     return this.handleResponse(response);
+  }
+
+  async imprimirPedido(id: number): Promise<Blob> {
+    const response = await fetch(`${API_BASE_URL}/api/pedidos/${id}/imprimir`, {
+      headers: {
+        ...this.getAuthHeaders(),
+        'Accept': 'application/pdf'
+      }
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Erro desconhecido ao gerar PDF' }));
+      throw new Error(errorData.message || `Erro ${response.status}`);
+    }
+    return response.blob();
   }
 
   // Relatórios

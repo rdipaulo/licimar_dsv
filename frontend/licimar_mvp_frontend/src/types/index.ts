@@ -43,6 +43,7 @@ export interface Produto {
   active: boolean;
   estoque_minimo: number;
   estoque_baixo: boolean;
+  nao_devolve: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -63,6 +64,7 @@ export interface ItemPedido {
   pedido_id: number;
   produto_id: number;
   produto_nome?: string;
+  produto_nao_devolve?: boolean;
   quantidade_saida: number;
   quantidade_retorno: number;
   quantidade_vendida: number;

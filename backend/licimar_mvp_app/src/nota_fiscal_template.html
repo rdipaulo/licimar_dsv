@@ -1,0 +1,58 @@
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Nota Fiscal - Pedido #{{pedido.id}}</title>
+            <style>
+                body { font-family: sans-serif; margin: 0; padding: 20px; }
+                .container { width: 80mm; margin: 0 auto; border: 1px solid #ccc; padding: 10px; }
+                .header { text-align: center; margin-bottom: 10px; }
+                .header h1 { font-size: 1.2em; margin: 0; }
+                .header p { font-size: 0.8em; margin: 0; }
+                .details { margin-bottom: 10px; font-size: 0.9em; }
+                .details p { margin: 2px 0; }
+                table { width: 100%; border-collapse: collapse; font-size: 0.8em; }
+                th, td { border: 1px solid #ccc; padding: 5px; text-align: right; }
+                th { background-color: #f2f2f2; text-align: left; }
+                .total { font-weight: bold; font-size: 1.1em; margin-top: 10px; }
+                .footer { text-align: center; margin-top: 20px; font-size: 0.8em; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Licimar MVP</h1>
+                    <p>Sistema de Gestão de Ambulantes</p>
+                    <p>Pedido de Saída/Retorno</p>
+                </div>
+                
+                <div class="details">
+                    <p><strong>Pedido Nº:</strong> {}</p>
+                    <p><strong>Ambulante:</strong> {}</p>
+                    <p><strong>Data da Operação:</strong> {}</p>
+                    <p><strong>Status:</strong> {}</p>
+                </div>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Produto</th>
+                            <th>Saída</th>
+                            <th>Retorno</th>
+                            <th>Vendido</th>
+                            <th>Preço Unit.</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {}
+                    </tbody>
+                </table>
+                
+                <div class="footer">
+                    <p class="total">Total a Pagar: R$ {:.2f}</p>
+                    <p>Observações: {}</p>
+                    <p style="text-align: center; margin-top: 20px;">Obrigado!</p>
+                </div>
+            </div>
+        </body>
+        </html>

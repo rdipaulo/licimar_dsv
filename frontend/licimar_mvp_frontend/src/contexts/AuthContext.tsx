@@ -34,23 +34,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!user;
 
+  console.log('[AuthProvider] isLoading:', isLoading, 'user:', user);
+
   useEffect(() => {
     // Verifica se há token armazenado e tenta recuperar o usuário
     const initAuth = async () => {
-      const token = localStorage.getItem('access_token');
-      
-      if (token) {
-        try {
-          const response = await apiService.getProfile();
-          setUser(response.user);
-        } catch (error) {
-          // Token inválido ou expirado
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
+      console.log('[AuthProvider] Iniciando autenticação...');
+      try {
+        const token = localStorage.getItem('access_token');
+        console.log('[AuthProvider] Token encontrado:', !!token);
+        
+        if (token) {
+          try {
+            console.log('[AuthProvider] Tentando obter perfil...');
+            const response = await apiService.getProfile();
+            console.log('[AuthProvider] Perfil obtido:', response);
+            setUser(response.user);
+          } catch (error) {
+            // Token inválido ou expirado
+            console.warn('[AuthProvider] Erro ao recuperar perfil:', error);
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+          }
         }
+      } catch (error) {
+        console.error('[AuthProvider] Erro na inicialização de autenticação:', error);
+      } finally {
+        console.log('[AuthProvider] Autenticação concluída');
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     };
 
     initAuth();

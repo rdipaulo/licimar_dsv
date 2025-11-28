@@ -40,14 +40,11 @@ def init_database():
         # Cria categorias padrão
         print("Criando categorias padrão...")
         categorias_padrao = [
-            {'nome': 'Picolés', 'descricao': 'Picolés diversos'},
-            {'nome': 'Sorvetes Premium', 'descricao': 'Sorvetes premium e especiais'},
-            {'nome': 'Picolés de Fruta', 'descricao': 'Picolés de frutas naturais'},
-            {'nome': 'Cones', 'descricao': 'Sorvetes em cone'},
-            {'nome': 'Sorvetes de Leite', 'descricao': 'Sorvetes cremosos'},
-            {'nome': 'Chocolates', 'descricao': 'Chocolates e bombons'},
-            {'nome': 'Doces', 'descricao': 'Balas e doces diversos'},
-            {'nome': 'Especiais', 'descricao': 'Produtos especiais'},
+            {'nome': 'Kibon', 'descricao': 'Produtos da marca Kibon'},
+            {'nome': 'Nestle', 'descricao': 'Produtos da marca Nestlé'},
+            {'nome': 'Italia', 'descricao': 'Produtos da marca Itália'},
+            {'nome': 'Gelo', 'descricao': 'Gelo seco e derivados'},
+            {'nome': 'Acessórios', 'descricao': 'Acessórios diversos'},
             {'nome': 'Outros', 'descricao': 'Outros produtos'}
         ]
         
@@ -104,65 +101,42 @@ def init_database():
         print("Criando produtos padrão...")
         if not Produto.query.first():
             # Busca categorias para associar aos produtos
-            cat_picoles = Categoria.query.filter_by(nome='Picolés').first()
-            cat_premium = Categoria.query.filter_by(nome='Sorvetes Premium').first()
-            cat_frutas = Categoria.query.filter_by(nome='Picolés de Fruta').first()
-            cat_cones = Categoria.query.filter_by(nome='Cones').first()
-            cat_leite = Categoria.query.filter_by(nome='Sorvetes de Leite').first()
-            cat_chocolates = Categoria.query.filter_by(nome='Chocolates').first()
-            cat_doces = Categoria.query.filter_by(nome='Doces').first()
-            cat_especiais = Categoria.query.filter_by(nome='Especiais').first()
+            cat_kibon = Categoria.query.filter_by(nome='Kibon').first()
+            cat_nestle = Categoria.query.filter_by(nome='Nestle').first()
+            cat_italia = Categoria.query.filter_by(nome='Italia').first()
+            cat_gelo = Categoria.query.filter_by(nome='Gelo').first()
+            cat_acessorios = Categoria.query.filter_by(nome='Acessórios').first()
             cat_outros = Categoria.query.filter_by(nome='Outros').first()
             
             produtos_padrao = [
-                # Picolés
-                {'nome': 'Picolé Chicabon', 'preco': 8.00, 'estoque': 100, 'categoria_id': cat_picoles.id if cat_picoles else None, 'imagem_url': '/assets/images/chicabon.avif'},
-                {'nome': 'Picolé Chicabon Zero', 'preco': 8.50, 'estoque': 80, 'categoria_id': cat_picoles.id if cat_picoles else None, 'imagem_url': '/assets/images/chicabon_zero.avif'},
-                {'nome': 'Eskibon Clássico', 'preco': 9.00, 'estoque': 70, 'categoria_id': cat_picoles.id if cat_picoles else None, 'imagem_url': '/assets/images/eskibon_classico.avif'},
-                {'nome': 'Chambinho', 'preco': 6.00, 'estoque': 120, 'categoria_id': cat_picoles.id if cat_picoles else None, 'imagem_url': '/assets/images/chambinho.jpeg'},
-                {'nome': 'Caribe', 'preco': 7.00, 'estoque': 100, 'categoria_id': cat_picoles.id if cat_picoles else None, 'imagem_url': '/assets/images/caribe.jpeg'},
+                # Kibon
+                {'nome': 'Picolé Chicabon', 'preco': 8.00, 'estoque': 100, 'categoria_id': cat_kibon.id if cat_kibon else None, 'imagem_url': '/assets/images/chicabon.avif'},
+                {'nome': 'Picolé Chicabon Zero', 'preco': 8.50, 'estoque': 80, 'categoria_id': cat_kibon.id if cat_kibon else None, 'imagem_url': '/assets/images/chicabon_zero.avif'},
+                {'nome': 'Eskibon Clássico', 'preco': 9.00, 'estoque': 70, 'categoria_id': cat_kibon.id if cat_kibon else None, 'imagem_url': '/assets/images/eskibon_classico.avif'},
+                {'nome': 'Chambinho', 'preco': 6.00, 'estoque': 120, 'categoria_id': cat_kibon.id if cat_kibon else None, 'imagem_url': '/assets/images/chambinho.jpeg'},
+                {'nome': 'Picolé Fruttare Coco', 'preco': 6.50, 'estoque': 90, 'categoria_id': cat_kibon.id if cat_kibon else None, 'imagem_url': '/assets/images/fruttare_coco.avif'},
                 
-                # Sorvetes Premium
-                {'nome': 'Sorvete Magnum Amêndoas', 'preco': 17.00, 'estoque': 50, 'categoria_id': cat_premium.id if cat_premium else None, 'imagem_url': '/assets/images/magnum_amendoas.jpeg'},
-                {'nome': 'Diamante Negro', 'preco': 11.00, 'estoque': 35, 'categoria_id': cat_premium.id if cat_premium else None, 'imagem_url': '/assets/images/diamante_negro.jpeg'},
-                {'nome': 'Brigadeiro', 'preco': 10.00, 'estoque': 65, 'categoria_id': cat_premium.id if cat_premium else None, 'imagem_url': '/assets/images/brigadeiro.avif'},
+                # Nestlé
+                {'nome': 'Cone Crocante Nestlé', 'preco': 12.00, 'estoque': 60, 'categoria_id': cat_nestle.id if cat_nestle else None, 'imagem_url': '/assets/images/cone_crocante_nestle.jpeg'},
+                {'nome': 'Cone KitKat', 'preco': 14.00, 'estoque': 45, 'categoria_id': cat_nestle.id if cat_nestle else None, 'imagem_url': '/assets/images/cone_kitkat.jpeg'},
+                {'nome': 'Cornetto Crocante', 'preco': 13.00, 'estoque': 50, 'categoria_id': cat_nestle.id if cat_nestle else None, 'imagem_url': '/assets/images/cornetto_crocante.avif'},
+                {'nome': 'Cornetto M&Ms', 'preco': 15.00, 'estoque': 40, 'categoria_id': cat_nestle.id if cat_nestle else None, 'imagem_url': '/assets/images/cornetto_mms.avif'},
+                {'nome': 'Sorvete Magnum', 'preco': 17.00, 'estoque': 50, 'categoria_id': cat_nestle.id if cat_nestle else None, 'imagem_url': '/assets/images/magnum_amendoas.jpeg'},
                 
-                # Picolés de Fruta
-                {'nome': 'Picolé Fruttare Morango', 'preco': 6.50, 'estoque': 120, 'categoria_id': cat_frutas.id if cat_frutas else None, 'imagem_url': '/assets/images/fruttare_morango.jpeg'},
-                {'nome': 'Picolé Fruttare Abacaxi', 'preco': 6.50, 'estoque': 100, 'categoria_id': cat_frutas.id if cat_frutas else None, 'imagem_url': '/assets/images/fruttare_abacaxi.jpeg'},
-                {'nome': 'Picolé Fruttare Coco', 'preco': 6.50, 'estoque': 90, 'categoria_id': cat_frutas.id if cat_frutas else None, 'imagem_url': '/assets/images/fruttare_coco.avif'},
-                {'nome': 'Picolé Fruttare Limão', 'preco': 6.50, 'estoque': 110, 'categoria_id': cat_frutas.id if cat_frutas else None, 'imagem_url': '/assets/images/fruttare_limao.avif'},
-                {'nome': 'Picolé Fruttare Uva', 'preco': 6.50, 'estoque': 95, 'categoria_id': cat_frutas.id if cat_frutas else None, 'imagem_url': '/assets/images/fruttare_uva.avif'},
-                {'nome': 'Frutilly', 'preco': 8.50, 'estoque': 75, 'categoria_id': cat_frutas.id if cat_frutas else None, 'imagem_url': '/assets/images/frutilly.avif'},
+                # Itália
+                {'nome': 'Brigadeiro', 'preco': 10.00, 'estoque': 65, 'categoria_id': cat_italia.id if cat_italia else None, 'imagem_url': '/assets/images/brigadeiro.avif'},
+                {'nome': 'Frutilly', 'preco': 8.50, 'estoque': 75, 'categoria_id': cat_italia.id if cat_italia else None, 'imagem_url': '/assets/images/frutilly.avif'},
+                {'nome': 'Sorvete Premium Itália', 'preco': 11.00, 'estoque': 35, 'categoria_id': cat_italia.id if cat_italia else None, 'imagem_url': '/assets/images/premium_italia.jpeg'},
                 
-                # Cones
-                {'nome': 'Cone Crocante Nestlé', 'preco': 12.00, 'estoque': 60, 'categoria_id': cat_cones.id if cat_cones else None, 'imagem_url': '/assets/images/cone_crocante_nestle.jpeg'},
-                {'nome': 'Cone KitKat', 'preco': 14.00, 'estoque': 45, 'categoria_id': cat_cones.id if cat_cones else None, 'imagem_url': '/assets/images/cone_kitkat.jpeg'},
-                {'nome': 'Cornetto Brigadeiro', 'preco': 13.00, 'estoque': 55, 'categoria_id': cat_cones.id if cat_cones else None, 'imagem_url': '/assets/images/cornetto_brigadeiro.jpeg'},
-                {'nome': 'Cornetto Crocante', 'preco': 13.00, 'estoque': 50, 'categoria_id': cat_cones.id if cat_cones else None, 'imagem_url': '/assets/images/cornetto_crocante.avif'},
-                {'nome': 'Cornetto M&Ms', 'preco': 15.00, 'estoque': 40, 'categoria_id': cat_cones.id if cat_cones else None, 'imagem_url': '/assets/images/cornetto_mms.avif'},
+                # Gelo
+                {'nome': 'Gelo Seco (kg)', 'preco': 28.00, 'estoque': 200, 'categoria_id': cat_gelo.id if cat_gelo else None, 'imagem_url': '/assets/images/gelo_seco.jpeg'},
                 
-                # Sorvetes de Leite
-                {'nome': 'LaFrutta Coco', 'preco': 7.50, 'estoque': 85, 'categoria_id': cat_leite.id if cat_leite else None, 'imagem_url': '/assets/images/lafrutta_coco.jpeg'},
-                {'nome': 'LaFrutta Manga', 'preco': 7.50, 'estoque': 80, 'categoria_id': cat_leite.id if cat_leite else None, 'imagem_url': '/assets/images/lafrutta_manga.jpeg'},
-                {'nome': 'LaFrutta Maracujá com Leite', 'preco': 7.50, 'estoque': 75, 'categoria_id': cat_leite.id if cat_leite else None, 'imagem_url': '/assets/images/lafrutta_maracuja_leite.jpeg'},
-                {'nome': 'LaFrutta Morango com Leite', 'preco': 7.50, 'estoque': 90, 'categoria_id': cat_leite.id if cat_leite else None, 'imagem_url': '/assets/images/lafrutta_morango_leite.jpeg'},
-                
-                # Chocolates
-                {'nome': 'Baton', 'preco': 5.50, 'estoque': 150, 'categoria_id': cat_chocolates.id if cat_chocolates else None, 'imagem_url': '/assets/images/baton.jpeg'},
-                {'nome': 'Bombom Garoto', 'preco': 4.50, 'estoque': 200, 'categoria_id': cat_chocolates.id if cat_chocolates else None, 'imagem_url': '/assets/images/bombom_garoto.jpeg'},
-                {'nome': 'Laka Oreo', 'preco': 12.00, 'estoque': 40, 'categoria_id': cat_chocolates.id if cat_chocolates else None, 'imagem_url': '/assets/images/laka_oreo.jpeg'},
-                
-                # Doces
-                {'nome': 'Fini Dentadura', 'preco': 3.50, 'estoque': 180, 'categoria_id': cat_doces.id if cat_doces else None, 'imagem_url': '/assets/images/fini_dentadura.jpeg'},
-                {'nome': 'Fini Tube Morango', 'preco': 4.00, 'estoque': 160, 'categoria_id': cat_doces.id if cat_doces else None, 'imagem_url': '/assets/images/fini_tube_morango.jpeg'},
-                {'nome': 'Fini Tube Tutti-Frutti', 'preco': 4.00, 'estoque': 160, 'categoria_id': cat_doces.id if cat_doces else None, 'imagem_url': '/assets/images/fini_tube_tuttifruti.jpeg'},
-                
-                # Especiais
-                {'nome': 'Leite Moça', 'preco': 9.50, 'estoque': 60, 'categoria_id': cat_especiais.id if cat_especiais else None, 'imagem_url': '/assets/images/leite_moca.jpeg'},
+                # Acessórios
+                {'nome': 'Sacola Térmica', 'preco': 5.00, 'estoque': 50, 'categoria_id': cat_acessorios.id if cat_acessorios else None, 'imagem_url': '/assets/images/sacola_termica.jpeg'},
+                {'nome': 'Caixa de Isopor', 'preco': 15.00, 'estoque': 30, 'categoria_id': cat_acessorios.id if cat_acessorios else None, 'imagem_url': '/assets/images/caixa_isopor.jpeg'},
                 
                 # Outros
-                {'nome': 'Gelo Seco (kg)', 'preco': 28.00, 'estoque': 200, 'categoria_id': cat_outros.id if cat_outros else None, 'imagem_url': '/assets/images/gelo_seco.jpeg'},
+                {'nome': 'Leite Moça', 'preco': 9.50, 'estoque': 60, 'categoria_id': cat_outros.id if cat_outros else None, 'imagem_url': '/assets/images/leite_moca.jpeg'},
             ]
             
             for produto_data in produtos_padrao:

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search } from 'lucide-react';
+import { Plus, Edit, ToggleLeft, ToggleRight, Search } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -11,6 +11,16 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
+import { Label } from '../components/ui/label';
+import { Badge } from '../components/ui/badge';
 import MainLayout from '../components/MainLayout';
 import { apiService } from '../services/api';
 import { Ambulante } from '../types';
@@ -25,6 +35,15 @@ const AmbulantesPag: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  const [editingAmbulante, setEditingAmbulante] = useState<Ambulante | null>(null);
+  const [formData, setFormData] = useState({
+    nome: '',
+    email: '',
+    telefone: '',
+    cpf: '',
+    endereco: '',
+  });
 
   // Carrega ambulantes da API
   useEffect(() => {
@@ -39,7 +58,7 @@ const AmbulantesPag: React.FC = () => {
         per_page: 10,
         search: searchTerm || undefined,
       });
-      setAmbulantes(response.items);
+      setAmbulantes(response.items || response.data || []);
     } catch (error) {
       toast.error('Erro ao carregar ambulantes');
       console.error(error);
@@ -48,17 +67,100 @@ const AmbulantesPag: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Tem certeza que deseja deletar este ambulante?')) {
+  const handleOpenModal = (ambulante?: Ambulante) => {
+    if (ambulante) {
+      setEditingAmbulante(ambulante);
+      setFormData({
+        nome: ambulante.nome,
+        email: ambulante.email || '',
+        telefone: ambulante.telefone || '',
+        cpf: ambulante.cpf || '',
+        endereco: ambulante.endereco || '',
+      });
+    } else {
+      setEditingAmbulante(null);
+      setFormData({
+        nome: '',
+        email: '',
+        telefone: '',
+        cpf: '',
+        endereco: '',
+      });
+    }
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingAmbulante(null);
+    setFormData({
+      nome: '',
+      email: '',
+      telefone: '',
+      cpf: '',
+      endereco: '',
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.nome.trim()) {
+      toast.error('Nome é obrigatório');
       return;
     }
 
     try {
-      await apiService.deleteAmbulante(id);
-      toast.success('Ambulante deletado com sucesso');
+      const payload: any = {
+        nome: formData.nome.trim(),
+      };
+
+      // Adiciona campos opcionais apenas se preenchidos
+      if (formData.email.trim()) payload.email = formData.email.trim();
+      if (formData.telefone.trim()) payload.telefone = formData.telefone.trim();
+      if (formData.cpf.trim()) payload.cpf = formData.cpf.trim();
+      if (formData.endereco.trim()) payload.endereco = formData.endereco.trim();
+      
+      // Apenas adicionar status se não estiver criando
+      if (editingAmbulante) {
+        payload.status = payload.status || 'ativo';
+      } else {
+        payload.status = 'ativo';
+      }
+
+      console.log('[Ambulantes] Payload:', payload);
+
+      if (editingAmbulante) {
+        await apiService.updateAmbulante(editingAmbulante.id, payload);
+        toast.success('Ambulante atualizado com sucesso!');
+      } else {
+        await apiService.createAmbulante(payload);
+        toast.success('Ambulante criado com sucesso!');
+      }
+
+      handleCloseModal();
       loadAmbulantes();
-    } catch (error) {
-      toast.error('Erro ao deletar ambulante');
+    } catch (error: any) {
+      console.error('Erro ao salvar ambulante:', error);
+      const errorMsg = error.response?.data?.message || error.message || 'Erro ao salvar ambulante';
+      toast.error(errorMsg);
+    }
+  };
+
+  const handleToggleStatus = async (ambulante: Ambulante) => {
+    const newStatus = ambulante.status === 'ativo' ? 'inativo' : 'ativo';
+    const action = newStatus === 'ativo' ? 'ativar' : 'desativar';
+
+    if (!window.confirm(`Tem certeza que deseja ${action} ${ambulante.nome}?`)) {
+      return;
+    }
+
+    try {
+      await apiService.updateAmbulante(ambulante.id, { status: newStatus });
+      toast.success(`Ambulante ${action}ado com sucesso`);
+      loadAmbulantes();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || `Erro ao ${action} ambulante`);
       console.error(error);
     }
   };
@@ -80,7 +182,7 @@ const AmbulantesPag: React.FC = () => {
             <h2 className="text-lg font-semibold text-gray-900">Gestão de Ambulantes</h2>
             <p className="text-sm text-gray-600">Cadastro e gerenciamento de vendedores ambulantes</p>
           </div>
-          <Button className="bg-indigo-600 hover:bg-indigo-700">
+          <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={() => handleOpenModal()}>
             <Plus size={18} className="mr-2" />
             Novo Ambulante
           </Button>
@@ -151,6 +253,7 @@ const AmbulantesPag: React.FC = () => {
                               variant="ghost"
                               size="sm"
                               className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              onClick={() => handleOpenModal(ambulante)}
                               title="Editar"
                             >
                               <Edit size={16} />
@@ -158,11 +261,14 @@ const AmbulantesPag: React.FC = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => handleDelete(ambulante.id)}
-                              title="Deletar"
+                              onClick={() => handleToggleStatus(ambulante)}
+                              title={ambulante.status === 'ativo' ? "Desativar" : "Ativar"}
                             >
-                              <Trash2 size={16} />
+                              {ambulante.status === 'ativo' ? (
+                                <ToggleRight className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <ToggleLeft className="h-4 w-4 text-gray-400" />
+                              )}
                             </Button>
                           </div>
                         </TableCell>
@@ -175,6 +281,91 @@ const AmbulantesPag: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editingAmbulante ? 'Editar Ambulante' : 'Novo Ambulante'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingAmbulante
+                ? 'Atualize as informações do ambulante'
+                : 'Preencha os dados do novo ambulante'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="nome">Nome *</Label>
+              <Input
+                id="nome"
+                value={formData.nome}
+                onChange={(e) =>
+                  setFormData({ ...formData, nome: e.target.value })
+                }
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="telefone">Telefone</Label>
+                <Input
+                  id="telefone"
+                  value={formData.telefone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, telefone: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="cpf">CPF</Label>
+                <Input
+                  id="cpf"
+                  value={formData.cpf}
+                  onChange={(e) =>
+                    setFormData({ ...formData, cpf: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="endereco">Endereço</Label>
+              <Input
+                id="endereco"
+                value={formData.endereco}
+                onChange={(e) =>
+                  setFormData({ ...formData, endereco: e.target.value })
+                }
+              />
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleCloseModal}>
+                Cancelar
+              </Button>
+              <Button type="submit">
+                {editingAmbulante ? 'Atualizar' : 'Criar'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };

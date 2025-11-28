@@ -1,131 +1,83 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/Login';
 import DashboardPage from './pages/Dashboard';
 import AmbulantesPag from './pages/Ambulantes';
+import ProdutosPage from './pages/Produtos';
 import PedidosSaida from './pages/Pedidos/PedidosSaida';
 import PedidosRetorno from './pages/Pedidos/PedidosRetorno';
 import LoadingSpinner from './components/LoadingSpinner';
 
 /**
- * Componente de rota protegida
- * Redireciona para login se o usuário não estiver autenticado
- */
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <>{children}</>;
-};
-
-/**
- * Componente de rota pública
- * Redireciona para dashboard se o usuário já estiver autenticado
- */
-const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  return <>{children}</>;
-};
-
-/**
- * Componente principal da aplicação
- * Define as rotas e o provedor de autenticação
+ * Componente de conteúdo da aplicação protegido por autenticação
  */
 const AppContent: React.FC = () => {
-  const { isLoading } = useAuth();
+  const { isLoading, isAuthenticated } = useAuth();
+
+  console.log('[AppContent] Rendering - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated);
 
   if (isLoading) {
-    return <LoadingSpinner />;
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   return (
     <Routes>
-      {/* Rotas públicas */}
-      <Route
-        path="/login"
-        element={
-          <PublicRoute>
-            <LoginPage />
-          </PublicRoute>
-        }
+      {/* Rota de login */}
+      <Route 
+        path="/login" 
+        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />} 
       />
 
-      {/* Rotas protegidas */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        }
+      {/* Rotas protegidas - redirecionam para login se não autenticado */}
+      <Route 
+        path="/dashboard" 
+        element={isAuthenticated ? <DashboardPage /> : <Navigate to="/login" replace />} 
       />
 
-      <Route
-        path="/ambulantes"
-        element={
-          <ProtectedRoute>
-            <AmbulantesPag />
-          </ProtectedRoute>
-        }
+      <Route 
+        path="/ambulantes" 
+        element={isAuthenticated ? <AmbulantesPag /> : <Navigate to="/login" replace />} 
       />
 
-      <Route
-        path="/pedidos/saida"
-        element={
-          <ProtectedRoute>
-            <PedidosSaida />
-          </ProtectedRoute>
-        }
+      <Route 
+        path="/produtos" 
+        element={isAuthenticated ? <ProdutosPage /> : <Navigate to="/login" replace />} 
       />
 
-      <Route
-        path="/pedidos/retorno"
-        element={
-          <ProtectedRoute>
-            <PedidosRetorno />
-          </ProtectedRoute>
-        }
+      <Route 
+        path="/pedidos/saida" 
+        element={isAuthenticated ? <PedidosSaida /> : <Navigate to="/login" replace />} 
+      />
+
+      <Route 
+        path="/pedidos/retorno" 
+        element={isAuthenticated ? <PedidosRetorno /> : <Navigate to="/login" replace />} 
       />
 
       {/* Rota padrão */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
 
       {/* Rota 404 */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
     </Routes>
   );
 };
 
 /**
  * Componente raiz da aplicação
- * Envolve tudo com o provedor de autenticação e toast
  */
 const App: React.FC = () => {
   return (
-    <Router>
-      <AuthProvider>
-        <AppContent />
-        <Toaster position="top-right" />
-      </AuthProvider>
-    </Router>
+    <AuthProvider>
+      <AppContent />
+      <Toaster position="top-right" />
+    </AuthProvider>
   );
 };
 
