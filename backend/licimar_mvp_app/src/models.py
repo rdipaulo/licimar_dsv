@@ -52,6 +52,7 @@ class Ambulante(db.Model):
     cpf = db.Column(db.String(14), unique=True)
     endereco = db.Column(db.Text)
     status = db.Column(db.String(20), default='ativo', nullable=False)  # 'ativo' ou 'inativo'
+    divida_acumulada = db.Column(db.Numeric(10, 2), default=0)  # Dívida acumulada do ambulante
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -68,6 +69,7 @@ class Ambulante(db.Model):
             'cpf': self.cpf,
             'endereco': self.endereco,
             'status': self.status,
+            'divida_acumulada': float(self.divida_acumulada) if self.divida_acumulada else 0,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
@@ -111,6 +113,7 @@ class Produto(db.Model):
     active = db.Column(db.Boolean, default=True, nullable=False)
     estoque_minimo = db.Column(db.Integer, default=10)  # Para alertas de estoque baixo
     nao_devolve = db.Column(db.Boolean, default=False, nullable=False) # Se o produto não pode ser devolvido (ex: Gelo Seco)
+    peso = db.Column(db.Numeric(5, 2), default=0) # Peso em kg para produtos como gelo seco (1.5, 1.7, etc)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -136,6 +139,7 @@ class Produto(db.Model):
             'estoque_minimo': self.estoque_minimo,
             'estoque_baixo': self.is_estoque_baixo(),
             'nao_devolve': self.nao_devolve,
+            'peso': float(self.peso) if self.peso else 0,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
@@ -175,6 +179,7 @@ class Pedido(db.Model):
     data_operacao = db.Column(db.DateTime, default=datetime.utcnow)
     status = db.Column(db.String(20), default='saida', nullable=False)  # 'saida', 'retorno', 'finalizado'
     total = db.Column(db.Numeric(10, 2), default=0)
+    divida = db.Column(db.Numeric(10, 2), default=0) # Novo campo para dívida
     observacoes = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -183,13 +188,15 @@ class Pedido(db.Model):
     itens = db.relationship('ItemPedido', backref='pedido', lazy=True, cascade='all, delete-orphan')
     
     def calcular_total(self):
-        """Calcula o total do pedido baseado nos itens"""
-        total = 0
+        """Calcula o total do pedido baseado nos itens e adiciona a dívida"""
+        total_itens = 0
         for item in self.itens:
             quantidade_vendida = item.quantidade_saida - item.quantidade_retorno
-            total += quantidade_vendida * item.preco_unitario
-        self.total = total
-        return total
+            total_itens += quantidade_vendida * item.preco_unitario
+        
+        total_final = total_itens + float(self.divida)
+        self.total = total_final
+        return total_final
     
     def to_dict(self):
         """Converte o objeto para dicionário"""
@@ -200,6 +207,7 @@ class Pedido(db.Model):
             'data_operacao': self.data_operacao.isoformat() if self.data_operacao else None,
             'status': self.status,
             'total': float(self.total),
+            'divida': float(self.divida),
             'observacoes': self.observacoes,
             'itens': [item.to_dict() for item in self.itens],
             'created_at': self.created_at.isoformat() if self.created_at else None,

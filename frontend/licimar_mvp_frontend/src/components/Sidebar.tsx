@@ -25,7 +25,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, onLogout }) => {
     { label: 'Pedidos', icon: BarChart3, href: '/pedidos', subItems: [
       { label: 'Registro de Saída', icon: Truck, href: '/pedidos/saida' },
       { label: 'Registro de Retorno', icon: FileText, href: '/pedidos/retorno' },
+      { label: 'Histórico', icon: FileText, href: '/pedidos/historico' },
     ] },
+    { label: 'Dashboard de Dívida', icon: BarChart3, href: '/dashboard-divida' },
     { label: 'Usuários', icon: Users, href: '/usuarios', adminOnly: true },
     { label: 'Configurações', icon: Settings, href: '/configuracoes', adminOnly: true },
   ];

@@ -265,18 +265,21 @@ def criar_pedido_retorno(pedido_id):
         if not data:
             return jsonify({'message': 'Dados não fornecidos'}), 400
         
-        itens_retorno = data.get('itens_retorno', [])
+        itens_retorno = data.get('itens', [])
+        divida = data.get('divida', 0.0)
         
         for item_data in itens_retorno:
-            item_id = item_data.get('item_id')
+            produto_id = item_data.get('produto_id')
             quantidade_retorno = item_data.get('quantidade_retorno', 0)
             
-            if not item_id:
+            if not produto_id:
                 continue
             
-            item_pedido = ItemPedido.query.get(item_id)
-            if not item_pedido or item_pedido.pedido_id != pedido_id:
-                return jsonify({'message': f'Item ID {item_id} inválido para este pedido'}), 400
+            # Encontra o ItemPedido correspondente
+            item_pedido = ItemPedido.query.filter_by(pedido_id=pedido_id, produto_id=produto_id).first()
+            
+            if not item_pedido:
+                return jsonify({'message': f'Produto ID {produto_id} não encontrado neste pedido'}), 400
             
             produto = item_pedido.produto
             if produto.nao_devolve:
@@ -297,17 +300,18 @@ def criar_pedido_retorno(pedido_id):
                 quantidade_retorno = 0
             
             if quantidade_retorno > item_pedido.quantidade_saida:
-                return jsonify({'message': f'Quantidade de retorno para {produto.nome} não pode ser maior que a de saída'}), 400
+                return jsonify({'message': f'Quantidade de retorno para {produto.nome} não pode ser maior que a de saída ({item_pedido.quantidade_saida})'}), 400
             
             item_pedido.quantidade_retorno = quantidade_retorno
+            db.session.add(item_pedido)
         
         from datetime import datetime
-        pedido.status = 'retorno'
-        pedido.total = pedido.calcular_total()
+        pedido.status = 'finalizado' # Altera para finalizado após o retorno
+        pedido.divida = float(divida) # Adiciona o campo divida
+        pedido.total = pedido.calcular_total() # Recalcula o total com a dívida
         pedido.updated_at = datetime.utcnow()
         
         db.session.commit()
-        
         return jsonify({
             'message': 'Pedido de retorno criado com sucesso',
             'pedido': pedido.to_dict()
@@ -349,7 +353,7 @@ def get_itens_pedido(pedido_id):
 @token_required
 def imprimir_pedido(pedido_id):
     """
-    Gera uma nota fiscal (PDF) para o pedido
+    Gera uma nota fiscal (PDF) para o pedido de SAÍDA
     """
     try:
         # Importação condicional para evitar erros em sistemas sem GTK
@@ -359,6 +363,54 @@ def imprimir_pedido(pedido_id):
         
         if not pedido:
             return jsonify({'message': 'Pedido não encontrado'}), 404
+        
+        itens_html = ''.join([
+            f'''
+            <tr>
+                <td>{item.produto.nome}</td>
+                <td>{float(item.quantidade_saida):.3f}</td>
+                <td>R$ {float(item.preco_unitario):.2f}</td>
+                <td>R$ {float(item.quantidade_saida * item.preco_unitario):.2f}</td>
+            </tr>
+            '''
+            for item in pedido.itens
+        ])
+
+        html_content = render_template(
+            'nota_fiscal_saida.html', # Usando um template específico para Saída
+            pedido=pedido,
+            itens_html=itens_html
+        )
+        
+        html = HTML(string=html_content)
+        pdf = html.write_pdf()
+        
+        response = make_response(pdf)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename=nota_fiscal_saida_pedido_{pedido_id}.pdf'
+        return response
+
+    except Exception as e:
+        current_app.logger.error(f"Erro ao gerar nota fiscal de saída: {e}")
+        return jsonify({'message': 'Erro interno do servidor'}), 500
+
+@pedidos_bp.route('/<int:pedido_id>/imprimir_retorno', methods=['GET'])
+@token_required
+def imprimir_pedido_retorno(pedido_id):
+    """
+    Gera uma nota fiscal (PDF) para o pedido de RETORNO/FINALIZADO
+    """
+    try:
+        # Importação condicional para evitar erros em sistemas sem GTK
+        from weasyprint import HTML
+        
+        pedido = Pedido.query.get(pedido_id)
+        
+        if not pedido:
+            return jsonify({'message': 'Pedido não encontrado'}), 404
+        
+        if pedido.status != 'finalizado':
+            return jsonify({'message': 'Apenas pedidos finalizados podem ter nota de retorno'}), 400
         
         itens_html = ''.join([
             f'''
@@ -375,7 +427,7 @@ def imprimir_pedido(pedido_id):
         ])
 
         html_content = render_template(
-            'nota_fiscal.html',
+            'nota_fiscal_retorno.html', # Usando um template específico para Retorno
             pedido=pedido,
             itens_html=itens_html
         )
@@ -385,11 +437,11 @@ def imprimir_pedido(pedido_id):
         
         response = make_response(pdf)
         response.headers['Content-Type'] = 'application/pdf'
-        response.headers['Content-Disposition'] = f'attachment; filename=nota_fiscal_pedido_{pedido_id}.pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename=nota_fiscal_retorno_pedido_{pedido_id}.pdf'
         return response
 
     except Exception as e:
-        current_app.logger.error(f"Erro ao gerar nota fiscal: {e}")
+        current_app.logger.error(f"Erro ao gerar nota fiscal de retorno: {e}")
         return jsonify({'message': 'Erro interno do servidor'}), 500
 
 @pedidos_bp.route('/<int:pedido_id>', methods=['DELETE'])

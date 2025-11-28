@@ -18,6 +18,7 @@ export interface Ambulante {
   cpf?: string;
   endereco?: string;
   status: 'ativo' | 'inativo';
+  divida_acumulada?: number;
   created_at: string;
   updated_at: string;
 }
@@ -44,6 +45,7 @@ export interface Produto {
   estoque_minimo: number;
   estoque_baixo: boolean;
   nao_devolve: boolean;
+  peso?: number;
   created_at: string;
   updated_at: string;
 }
@@ -225,4 +227,8 @@ export interface PedidoRetornoForm {
     quantidade_retorno: number;
   }>;
   observacoes?: string;
+}
+
+export interface PedidoRetornoFormComDivida extends PedidoRetornoForm {
+  divida?: number;
 }

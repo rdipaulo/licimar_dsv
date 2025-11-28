@@ -20,7 +20,8 @@ import {
   RegraCobrancaForm,
   UserForm,
   PedidoSaidaForm,
-  PedidoRetornoForm
+  PedidoRetornoForm,
+  PedidoRetornoFormComDivida
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -416,13 +417,27 @@ class ApiService {
     return this.handleResponse(response);
   }
 
-  async registrarRetorno(id: number, data: PedidoRetornoForm): Promise<{ message: string; pedido: Pedido }> {
+  async registrarRetorno(id: number, data: PedidoRetornoFormComDivida): Promise<{ message: string; pedido: Pedido }> {
     const response = await fetch(`${API_BASE_URL}/api/pedidos/${id}/retorno`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(data)
     });
     return this.handleResponse(response);
+  }
+
+  async imprimirRetorno(id: number): Promise<Blob> {
+    const response = await fetch(`${API_BASE_URL}/api/pedidos/${id}/imprimir_retorno`, {
+      headers: {
+        ...this.getAuthHeaders(),
+        'Accept': 'application/pdf'
+      }
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Erro desconhecido ao gerar PDF' }));
+      throw new Error(errorData.message || `Erro ${response.status}`);
+    }
+    return response.blob();
   }
 
   async finalizarPedido(id: number): Promise<{ message: string; pedido: Pedido }> {
@@ -495,6 +510,65 @@ class ApiService {
       headers: this.getAuthHeaders()
     });
     return this.handleResponse(response);
+  }
+
+  // Impressão de Notas Fiscais
+  async imprimirNotaSaida(pedidoId: number): Promise<void> {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${API_BASE_URL}/api/pedidos/${pedidoId}/imprimir`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao gerar nota: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `nota_fiscal_saida_${pedidoId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erro ao imprimir nota de saída:', error);
+      throw error;
+    }
+  }
+
+  async imprimirNotaRetorno(pedidoId: number): Promise<void> {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${API_BASE_URL}/api/pedidos/${pedidoId}/imprimir_retorno`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao gerar nota: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `nota_fiscal_retorno_${pedidoId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erro ao imprimir nota de retorno:', error);
+      throw error;
+    }
   }
 }
 

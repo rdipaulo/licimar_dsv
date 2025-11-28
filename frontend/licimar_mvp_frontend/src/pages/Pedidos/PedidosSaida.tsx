@@ -33,28 +33,13 @@ export default function PedidosSaida() {
       try {
         const ambulantesRes = await apiService.getAmbulantesAtivos();
         const produtosRes = await apiService.getProdutos();
-        const pedidosEmAbertoRes = await apiService.getPedidos({ status: 'saida' });
+        // Não carrega pedidos em aberto na inicialização, a lógica será movida para o useEffect do selectedAmbulanteId
+        // const pedidosEmAbertoRes = await apiService.getPedidos({ status: 'saida' });
 
         setAmbulantes(ambulantesRes);
         setProdutos(produtosRes.items || []);
         
-        // Se houver pedidos em aberto, carrega o primeiro para edição
-        if (pedidosEmAbertoRes.items && pedidosEmAbertoRes.items.length > 0) {
-          const primeiroPedido = pedidosEmAbertoRes.items[0];
-          setPedidoEmEdicao(primeiroPedido);
-          setSelectedAmbulanteId(primeiroPedido.ambulante_id);
-          setCarrinho(primeiroPedido.itens.map(item => ({
-            produto_id: item.produto_id,
-            produto_nome: item.produto_nome || '',
-            preco_unitario: item.preco_unitario,
-            quantidade_saida: item.quantidade_saida,
-            valor_total: item.quantidade_saida * item.preco_unitario,
-          })));
-          toast({
-            title: 'Pedido em Aberto Encontrado',
-            description: `O Pedido #${primeiroPedido.id} do ambulante ${primeiroPedido.ambulante_nome} está em edição.`,
-          });
-        }
+        // Lógica de carregamento de pedido em aberto movida para o useEffect do selectedAmbulanteId
       } catch (error) {
         toast({
           title: 'Erro ao carregar dados',
@@ -67,6 +52,48 @@ export default function PedidosSaida() {
     }
     fetchData();
   }, []);
+
+  // Efeito para carregar pedido em aberto quando o ambulante é selecionado
+  useEffect(() => {
+    if (!selectedAmbulanteId) {
+      setPedidoEmEdicao(null);
+      setCarrinho([]);
+      return;
+    }
+
+    async function fetchPedidoEmAberto() {
+      try {
+        // Busca pedidos em aberto para o ambulante selecionado
+        const pedidosRes = await apiService.getPedidos({ status: 'saida', ambulante_id: selectedAmbulanteId });
+        
+        if (pedidosRes.items && pedidosRes.items.length > 0) {
+          const pedido = pedidosRes.items[0];
+          setPedidoEmEdicao(pedido);
+          setCarrinho(pedido.itens.map(item => ({
+            produto_id: item.produto_id,
+            produto_nome: item.produto_nome || '',
+            preco_unitario: item.preco_unitario,
+            quantidade_saida: item.quantidade_saida,
+            valor_total: item.quantidade_saida * item.preco_unitario,
+          })));
+          toast({
+            title: 'Pedido em Aberto Carregado',
+            description: `O Pedido #${pedido.id} do ambulante ${pedido.ambulante_nome} foi carregado para edição (reforço).`,
+          });
+        } else {
+          setPedidoEmEdicao(null);
+          setCarrinho([]);
+        }
+      } catch (error) {
+        toast({
+          title: 'Erro ao carregar pedido em aberto',
+          description: 'Não foi possível carregar o pedido em aberto para o ambulante selecionado.',
+          variant: 'destructive',
+        });
+      }
+    }
+    fetchPedidoEmAberto();
+  }, [selectedAmbulanteId]);
 
   const handleAddItem = (produto: Produto, quantidade: number) => {
     if (quantidade <= 0) return;
@@ -147,28 +174,43 @@ export default function PedidosSaida() {
 
     setIsSubmitting(true);
     try {
+      let pedidoId: number;
+
       if (pedidoEmEdicao) {
         // Atualizar pedido existente
         await apiService.updatePedidoSaida(pedidoEmEdicao.id, payload);
+        pedidoId = pedidoEmEdicao.id;
         toast({
           title: 'Sucesso',
-          description: `Pedido #${pedidoEmEdicao.id} atualizado com sucesso!`,
+          description: `Pedido #${pedidoId} atualizado com sucesso!`,
         });
       } else {
         // Criar novo pedido
-        await apiService.createPedidoSaida(payload);
+        const newPedido = await apiService.createPedidoSaida(payload);
+        pedidoId = newPedido.id;
         toast({
           title: 'Sucesso',
-          description: 'Pedido de saída registrado com sucesso!',
+          description: `Pedido de saída #${pedidoId} registrado com sucesso!`,
         });
       }
       
+      // IMPRIMIR NOTA FISCAL (Requisito do Usuário)
+      try {
+        await apiService.imprimirNotaSaida(pedidoId);
+      } catch (error) {
+        console.error('Erro ao imprimir:', error);
+        toast({
+          title: 'Aviso',
+          description: 'Pedido registrado, mas houve erro ao gerar a nota fiscal.',
+          variant: 'destructive',
+        });
+      }
+
       // Limpar e recarregar
       setSelectedAmbulanteId(null);
       setCarrinho([]);
       setPedidoEmEdicao(null);
-      // Recarregar dados para verificar se há novos pedidos em aberto
-      // (Para simplificar, apenas limpa o estado, o usuário pode recarregar a página)
+      // A lógica de recarregar pedidos em aberto para o ambulante selecionado está no useEffect
       
     } catch (error) {
       toast({
@@ -235,8 +277,12 @@ export default function PedidosSaida() {
                 <CardContent className="p-3 pt-0">
                   <p className="text-sm text-muted-foreground">Estoque: {produto.estoque}</p>
                   <p className="text-xl font-semibold text-primary">R$ {produto.preco.toFixed(2)}</p>
+                  {/* Mostra peso se o produto tiver (para Gelo Seco) */}
+                  {(produto as any).peso && (produto as any).peso > 0 && (
+                    <p className="text-sm text-blue-600 font-semibold">Peso/Un: {((produto as any).peso).toFixed(2)} kg</p>
+                  )}
                   {/* Verifica se é produto por peso (kg) */}
-                  {produto.nome.toLowerCase().includes('kg') || produto.nome.toLowerCase().includes('gelo') ? (
+                  {produto.nome.toLowerCase().includes('kg') || produto.nome.toLowerCase().includes('gelo') || ((produto as any).peso && (produto as any).peso > 0) ? (
                     <div className="mt-2">
                       <label className="text-xs text-muted-foreground">Quantidade (kg):</label>
                       <input
@@ -244,8 +290,7 @@ export default function PedidosSaida() {
                         step="0.001"
                         min="0"
                         max={produto.estoque}
-                        // Linha 263
-                        value={carrinho.find(item => item.produto_id === produto.id)?.quantidade_saida !== undefined ? carrinho.find(item => item.produto_id === produto.id)?.quantidade_saida.toFixed(3) : ''}
+                        value={carrinho.find(item => item.produto_id === produto.id)?.quantidade_saida || 0}
                         onChange={(e) => {
                           // Substitui vírgula por ponto para garantir que parseFloat funcione corretamente
                           const rawValue = e.target.value.replace(',', '.');
@@ -302,7 +347,7 @@ export default function PedidosSaida() {
           <CardContent className="flex-grow flex flex-col">
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">Ambulante</label>
-              <Select onValueChange={value => setSelectedAmbulanteId(Number(value))} value={selectedAmbulanteId?.toString() || ''}>
+              <Select onValueChange={value => setSelectedAmbulanteId(Number(value))} value={selectedAmbulanteId?.toString() || ''} disabled={isSubmitting}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o Ambulante" />
                 </SelectTrigger>

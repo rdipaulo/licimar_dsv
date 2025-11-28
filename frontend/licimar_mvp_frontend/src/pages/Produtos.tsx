@@ -35,6 +35,7 @@ interface Produto {
   estoque_minimo: number;
   estoque_baixo: boolean;
   active: boolean;
+  peso?: number;
 }
 
 interface Categoria {
@@ -58,6 +59,7 @@ const Produtos: React.FC = () => {
     categoria_id: '',
     descricao: '',
     estoque_minimo: '10',
+    peso: '0',
   });
 
   useEffect(() => {
@@ -106,6 +108,7 @@ const Produtos: React.FC = () => {
         categoria_id: produto.categoria_id?.toString() || '',
         descricao: produto.descricao || '',
         estoque_minimo: produto.estoque_minimo.toString(),
+        peso: (produto.peso || 0).toString(),
       });
     } else {
       setEditingProduto(null);
@@ -116,6 +119,7 @@ const Produtos: React.FC = () => {
         categoria_id: '',
         descricao: '',
         estoque_minimo: '10',
+        peso: '0',
       });
     }
     setShowModal(true);
@@ -137,6 +141,7 @@ const Produtos: React.FC = () => {
         categoria_id: formData.categoria_id ? parseInt(formData.categoria_id) : null,
         descricao: formData.descricao || null,
         estoque_minimo: parseInt(formData.estoque_minimo),
+        peso: parseFloat(formData.peso) || 0,
       };
 
       if (editingProduto) {
@@ -398,6 +403,21 @@ const Produtos: React.FC = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, estoque_minimo: e.target.value })
                   }
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="peso">Peso (kg) - Para produtos como Gelo Seco</Label>
+                <Input
+                  id="peso"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={formData.peso}
+                  onChange={(e) =>
+                    setFormData({ ...formData, peso: e.target.value })
+                  }
+                  placeholder="Ex: 1.5 ou 1.7"
                 />
               </div>
             </div>

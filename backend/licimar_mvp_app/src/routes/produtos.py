@@ -119,6 +119,14 @@ def create_produto():
         except (ValueError, TypeError):
             estoque_minimo = 10
         
+        # Peso do produto (para produtos como gelo seco)
+        try:
+            peso = float(data.get('peso', 0))
+            if peso < 0:
+                return jsonify({'message': 'Peso não pode ser negativo'}), 400
+        except (ValueError, TypeError):
+            peso = 0
+        
         # Verifica se produto já existe
         existing_produto = Produto.query.filter_by(nome=nome).first()
         if existing_produto:
@@ -132,7 +140,8 @@ def create_produto():
             categoria_id=categoria_id,
             descricao=descricao,
             imagem_url=imagem_url,
-            estoque_minimo=estoque_minimo
+            estoque_minimo=estoque_minimo,
+            peso=peso
         )
         
         db.session.add(produto)
@@ -222,6 +231,15 @@ def update_produto(produto_id):
                 produto.estoque_minimo = estoque_minimo
             except (ValueError, TypeError):
                 return jsonify({'message': 'Estoque mínimo inválido'}), 400
+        
+        if 'peso' in data:
+            try:
+                peso = float(data['peso'])
+                if peso < 0:
+                    return jsonify({'message': 'Peso não pode ser negativo'}), 400
+                produto.peso = peso
+            except (ValueError, TypeError):
+                return jsonify({'message': 'Peso inválido'}), 400
         
         if 'active' in data:
             produto.active = bool(data['active'])

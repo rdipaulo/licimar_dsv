@@ -211,6 +211,15 @@ def update_ambulante(ambulante_id):
                 return jsonify({'message': 'Status deve ser "ativo" ou "inativo"'}), 400
             ambulante.status = status
         
+        if 'divida_acumulada' in data:
+            try:
+                divida = float(data['divida_acumulada'])
+                if divida < 0:
+                    return jsonify({'message': 'Dívida acumulada não pode ser negativa'}), 400
+                ambulante.divida_acumulada = divida
+            except (ValueError, TypeError):
+                return jsonify({'message': 'Dívida acumulada deve ser um número válido'}), 400
+        
         db.session.commit()
         
         return jsonify({

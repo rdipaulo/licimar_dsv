@@ -43,6 +43,7 @@ const AmbulantesPag: React.FC = () => {
     telefone: '',
     cpf: '',
     endereco: '',
+    divida_acumulada: 0,
   });
 
   // Carrega ambulantes da API
@@ -76,6 +77,7 @@ const AmbulantesPag: React.FC = () => {
         telefone: ambulante.telefone || '',
         cpf: ambulante.cpf || '',
         endereco: ambulante.endereco || '',
+        divida_acumulada: (ambulante as any).divida_acumulada || 0,
       });
     } else {
       setEditingAmbulante(null);
@@ -85,6 +87,7 @@ const AmbulantesPag: React.FC = () => {
         telefone: '',
         cpf: '',
         endereco: '',
+        divida_acumulada: 0,
       });
     }
     setShowModal(true);
@@ -99,6 +102,8 @@ const AmbulantesPag: React.FC = () => {
       telefone: '',
       cpf: '',
       endereco: '',
+      divida_acumulada: 0,
+    });
     });
   };
 
@@ -235,6 +240,7 @@ const AmbulantesPag: React.FC = () => {
                       <TableHead>Email</TableHead>
                       <TableHead>Telefone</TableHead>
                       <TableHead>CPF</TableHead>
+                      <TableHead>Dívida Acumulada</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
@@ -246,6 +252,11 @@ const AmbulantesPag: React.FC = () => {
                         <TableCell>{ambulante.email || '-'}</TableCell>
                         <TableCell>{ambulante.telefone || '-'}</TableCell>
                         <TableCell>{ambulante.cpf || '-'}</TableCell>
+                        <TableCell>
+                          <span className={((ambulante as any).divida_acumulada || 0) > 0 ? 'text-red-600 font-semibold' : 'text-gray-500'}>
+                            R$ {(((ambulante as any).divida_acumulada || 0).toFixed(2))}
+                          </span>
+                        </TableCell>
                         <TableCell>{getStatusBadge(ambulante.status)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end space-x-2">
@@ -351,6 +362,19 @@ const AmbulantesPag: React.FC = () => {
                 value={formData.endereco}
                 onChange={(e) =>
                   setFormData({ ...formData, endereco: e.target.value })
+                }
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="divida_acumulada">Dívida Acumulada (R$)</Label>
+              <Input
+                id="divida_acumulada"
+                type="number"
+                step="0.01"
+                value={formData.divida_acumulada}
+                onChange={(e) =>
+                  setFormData({ ...formData, divida_acumulada: parseFloat(e.target.value) || 0 })
                 }
               />
             </div>
