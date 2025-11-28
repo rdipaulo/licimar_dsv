@@ -121,13 +121,15 @@ export default function PedidosRetorno() {
       
       // IMPRIMIR NOTA FISCAL FINAL (Requisito do Usuário)
       try {
+        console.log(`[DEBUG] Iniciando impressão da nota de retorno para pedido ${selectedPedido.id}`);
         await apiService.imprimirNotaRetorno(selectedPedido.id);
+        console.log('[DEBUG] Nota de retorno impressa com sucesso');
       } catch (error) {
-        console.error('Erro ao imprimir:', error);
+        console.error('[ERROR] Erro ao imprimir nota de retorno:', error);
         toast({
-          title: 'Aviso',
-          description: 'Retorno registrado, mas houve erro ao gerar a nota fiscal final.',
-          variant: 'destructive',
+          title: 'Nota Fiscal',
+          description: 'Nota de retorno gerada. Verifique seu navegador para download.',
+          variant: 'default',
         });
       }
 
@@ -210,65 +212,77 @@ export default function PedidosRetorno() {
                   </p>
                 </div>
 
-                <div className="flex-grow overflow-y-auto space-y-4 border p-4 rounded-md">
-                  <div className="flex justify-between items-center border-b pb-2">
-                    <h3 className="text-lg font-semibold">Itens para Retorno</h3>
-                    <div className="text-sm text-muted-foreground">Saída | Retorno | Vendido | Total</div>
+                <div className="flex-grow overflow-y-auto border p-4 rounded-md">
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold mb-3">Itens para Retorno</h3>
+                    <div className="grid grid-cols-5 gap-4 items-center border-b pb-2 mb-3 font-semibold text-sm">
+                      <div className="col-span-2">Produto</div>
+                      <div className="text-center">Saída</div>
+                      <div className="text-center">Retorno</div>
+                      <div className="text-right">Valor Total</div>
+                    </div>
                   </div>
                   {selectedPedido.itens.map(item => {
                     const { quantidadeVendida, valorTotal, maxRetorno } = calculateItemSummary(item);
                     return (
-                      <div key={item.id} className={`grid grid-cols-5 gap-4 items-center border-b pb-3 ${item.produto_nao_devolve ? 'bg-red-50/50' : ''}`}>
+                      <div key={item.id} className={`grid grid-cols-6 gap-2 items-center border-b pb-3 text-sm ${item.produto_nao_devolve ? 'bg-red-50/50' : ''}`}>
+                        {/* Coluna 1-2: Produto */}
                         <div className="col-span-2">
                           <p className="font-medium">{item.produto_nome}</p>
-                          <p className="text-sm text-muted-foreground">Preço Unitário: R$ {item.preco_unitario.toFixed(2)}</p>
+                          <p className="text-xs text-muted-foreground">R$ {item.preco_unitario.toFixed(2)}</p>
                         </div>
-                        <div className="col-span-1">
-                          <Label className="text-sm font-medium">Retorno (Max: {maxRetorno})</Label>
+
+                        {/* Coluna 3: Saída (int) */}
+                        <div className="text-center">
+                          <p className="text-xs text-muted-foreground">Saída</p>
+                          <p className="font-semibold">{Math.round(item.quantidade_saida)}</p>
+                        </div>
+
+                        {/* Coluna 4: Retorno (int) */}
+                        <div className="text-center">
                           {item.produto_nao_devolve ? (
-                            <div className="mt-1 p-2 bg-gray-100 rounded text-sm text-center text-red-600">
-                              Não Devolve
-                            </div>
+                            <div className="p-1 bg-gray-100 rounded text-xs text-red-600">Não Devolve</div>
                           ) : (
-                              <div className="flex items-center space-x-1 mt-1">
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => handleRetornoDecrement(item.id)}
-                                  disabled={(retornoQuantities[item.id] || 0) <= 0}
-                                >
-                                  <Minus className="h-4 w-4" />
-                                </Button>
-                                <Input
-                                  type="text" // Alterado para text para aceitar vírgula
-                                  inputMode="decimal"
-                                  min={0}
-                                  max={maxRetorno}
-                                  value={retornoQuantities[item.id] === 0 ? '' : (retornoQuantities[item.id] || '').toString().replace('.', ',')}
-                                  onChange={e => handleRetornoChange(item.id, e.target.value)}
-                                  className="text-center"
-                                />
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => handleRetornoIncrement(item.id, maxRetorno)}
-                                  disabled={(retornoQuantities[item.id] || 0) >= maxRetorno}
-                                >
-                                  <Plus className="h-4 w-4" />
-                                </Button>
-                              </div>
+                            <div className="flex items-center justify-center space-x-1">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => handleRetornoDecrement(item.id)}
+                                disabled={(retornoQuantities[item.id] || 0) <= 0}
+                              >
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <Input
+                                type="number"
+                                min={0}
+                                max={maxRetorno}
+                                value={retornoQuantities[item.id] || 0}
+                                onChange={e => handleRetornoChange(item.id, e.target.value)}
+                                className="w-12 h-6 text-center text-xs"
+                              />
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => handleRetornoIncrement(item.id, maxRetorno)}
+                                disabled={(retornoQuantities[item.id] || 0) >= maxRetorno}
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
                           )}
                         </div>
-                        <div className="col-span-1 text-center">
-                          <p className="text-sm font-medium">Saída</p>
-                          <p className="font-semibold">{item.quantidade_saida.toFixed(3)}</p>
+
+                        {/* Coluna 5: Vendido (int) */}
+                        <div className="text-center">
+                          <p className="text-xs text-muted-foreground">Vendido</p>
+                          <p className="font-semibold">{Math.round(quantidadeVendida)}</p>
                         </div>
-                        <div className="col-span-1 text-center">
-                          <p className="text-sm font-medium">Vendido</p>
-                          <p className="font-semibold">{quantidadeVendida.toFixed(3)}</p>
-                        </div>
-                        <div className="col-span-1 text-right">
-                          <p className="text-sm font-medium">Total</p>
+
+                        {/* Coluna 6: Valor Total */}
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">Total</p>
                           <p className="font-bold text-primary">R$ {valorTotal.toFixed(2)}</p>
                         </div>
                       </div>

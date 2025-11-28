@@ -104,7 +104,6 @@ const AmbulantesPag: React.FC = () => {
       endereco: '',
       divida_acumulada: 0,
     });
-    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

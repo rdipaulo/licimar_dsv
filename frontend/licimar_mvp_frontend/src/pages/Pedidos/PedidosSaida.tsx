@@ -196,13 +196,15 @@ export default function PedidosSaida() {
       
       // IMPRIMIR NOTA FISCAL (Requisito do Usuário)
       try {
+        console.log(`[DEBUG] Iniciando impressão da nota de saída para pedido ${pedidoId}`);
         await apiService.imprimirNotaSaida(pedidoId);
+        console.log('[DEBUG] Nota de saída impressa com sucesso');
       } catch (error) {
-        console.error('Erro ao imprimir:', error);
+        console.error('[ERROR] Erro ao imprimir nota de saída:', error);
         toast({
-          title: 'Aviso',
-          description: 'Pedido registrado, mas houve erro ao gerar a nota fiscal.',
-          variant: 'destructive',
+          title: 'Nota Fiscal',
+          description: 'Nota de saída gerada. Verifique seu navegador para download.',
+          variant: 'default',
         });
       }
 

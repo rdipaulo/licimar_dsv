@@ -221,8 +221,8 @@ class ItemPedido(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     pedido_id = db.Column(db.Integer, db.ForeignKey('pedidos.id'), nullable=False)
     produto_id = db.Column(db.Integer, db.ForeignKey('produtos.id'), nullable=False)
-    quantidade_saida = db.Column(db.Numeric(10, 3), nullable=False, default=0)  # Permite decimais para gelo seco
-    quantidade_retorno = db.Column(db.Numeric(10, 3), nullable=False, default=0)
+    quantidade_saida = db.Column(db.Integer, nullable=False, default=0)  # INT para quantidade
+    quantidade_retorno = db.Column(db.Integer, nullable=False, default=0)  # INT para quantidade
     preco_unitario = db.Column(db.Numeric(10, 2), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
@@ -242,8 +242,8 @@ class ItemPedido(db.Model):
             'produto_id': self.produto_id,
             'produto_nome': self.produto.nome if self.produto else None,
             'quantidade_saida': float(self.quantidade_saida),
-            'quantidade_retorno': float(self.quantidade_retorno),
-            'quantidade_vendida': float(self.quantidade_vendida()),
+            'quantidade_retorno': int(self.quantidade_retorno),
+            'quantidade_vendida': int(self.quantidade_vendida()),
             'preco_unitario': float(self.preco_unitario),
             'valor_total': float(self.valor_total()),
             'created_at': self.created_at.isoformat() if self.created_at else None
