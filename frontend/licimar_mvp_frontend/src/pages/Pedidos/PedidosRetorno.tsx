@@ -187,7 +187,7 @@ export default function PedidosRetorno() {
                           ) : (
                             <Input
                               type="number"
-                              step={0.001}
+                              step={1}
                               min={0}
                               max={maxRetorno}
                               value={retornoQuantities[item.id] || 0}

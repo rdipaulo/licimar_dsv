@@ -7,4 +7,6 @@ Se um ambulante tiver pedidos em aberto e for selecionado em registrar pedido o 
 
 Melhoria na tela de retorno
 
-O tipo do atributo retorno deve ser int. Ao clicar registrar retorno e finalizar o pedido tbm deve ser gerada a nota fiscal final, descriminando para o Ambulante a quantidade de sorvete na saida e no retorno, além disso no fim da lista de produtos deve haver um campo lançamento de divida que irá somar ao valor total da nota.
+ Ao clicar registrar retorno e finalizar o pedido tbm deve ser gerada a nota fiscal final, descriminando para o Ambulante a quantidade de sorvete na saida e no retorno, além disso no fim da lista de produtos deve haver um campo lançamento de divida que irá somar ao valor total da nota.
+
+Na tela retorno o recurso para aumentar o valor de retorno e diminuir é muito pequeno. Inclua um sinal de mais e menos fica melhor.
