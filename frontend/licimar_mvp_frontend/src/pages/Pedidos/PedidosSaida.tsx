@@ -245,7 +245,7 @@ export default function PedidosSaida() {
                         min="0"
                         max={produto.estoque}
                         // Linha 263
-                        value={carrinho.find(item => item.produto_id === produto.id)?.quantidade_saida.toFixed(3) || ''}
+                        value={carrinho.find(item => item.produto_id === produto.id)?.quantidade_saida !== undefined ? carrinho.find(item => item.produto_id === produto.id)?.quantidade_saida.toFixed(3) : ''}
                         onChange={(e) => {
                           // Substitui vírgula por ponto para garantir que parseFloat funcione corretamente
                           const rawValue = e.target.value.replace(',', '.');
