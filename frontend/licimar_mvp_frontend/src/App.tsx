@@ -4,7 +4,7 @@ import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/Login';
 import DashboardPage from './pages/Dashboard';
-import AmbulantesPag from './pages/Ambulantes';
+import ClientesPage from './pages/Clientes';
 import ProdutosPage from './pages/Produtos';
 import PedidosSaida from './pages/Pedidos/PedidosSaida';
 import PedidosRetorno from './pages/Pedidos/PedidosRetorno';
@@ -43,8 +43,8 @@ const AppContent: React.FC = () => {
       />
 
       <Route 
-        path="/ambulantes" 
-        element={isAuthenticated ? <AmbulantesPag /> : <Navigate to="/login" replace />} 
+        path="/clientes" 
+        element={isAuthenticated ? <ClientesPage /> : <Navigate to="/login" replace />} 
       />
 
       <Route 

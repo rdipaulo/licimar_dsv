@@ -41,9 +41,9 @@ class User(db.Model):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
 
-class Ambulante(db.Model):
-    """Modelo para ambulantes/vendedores"""
-    __tablename__ = 'ambulantes'
+class Cliente(db.Model):
+    """Modelo para clientes/vendedores"""
+    __tablename__ = 'clientes'
     
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(100), nullable=False)
@@ -52,12 +52,15 @@ class Ambulante(db.Model):
     cpf = db.Column(db.String(14), unique=True)
     endereco = db.Column(db.Text)
     status = db.Column(db.String(20), default='ativo', nullable=False)  # 'ativo' ou 'inativo'
-    divida_acumulada = db.Column(db.Numeric(10, 2), default=0)  # Dívida acumulada do ambulante
+    divida_acumulada = db.Column(db.Numeric(10, 2), default=0)  # Dívida acumulada do cliente
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relacionamentos
-    pedidos = db.relationship('Pedido', backref='ambulante', lazy=True)
+    pedidos = db.relationship('Pedido', backref='cliente', lazy=True)
+
+# Alias para compatibilidade com código legado
+Ambulante = Cliente
     
     def to_dict(self):
         """Converte o objeto para dicionário"""
@@ -175,7 +178,7 @@ class Pedido(db.Model):
     __tablename__ = 'pedidos'
     
     id = db.Column(db.Integer, primary_key=True)
-    ambulante_id = db.Column(db.Integer, db.ForeignKey('ambulantes.id'), nullable=False)
+    cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=False)
     data_operacao = db.Column(db.DateTime, default=datetime.utcnow)
     status = db.Column(db.String(20), default='saida', nullable=False)  # 'saida', 'retorno', 'finalizado'
     total = db.Column(db.Numeric(10, 2), default=0)
@@ -202,8 +205,11 @@ class Pedido(db.Model):
         """Converte o objeto para dicionário"""
         return {
             'id': self.id,
-            'ambulante_id': self.ambulante_id,
-            'ambulante_nome': self.ambulante.nome if self.ambulante else None,
+            'cliente_id': self.cliente_id,
+            'cliente_nome': self.cliente.nome if self.cliente else None,
+            # Aliases para compatibilidade com código legado
+            'ambulante_id': self.cliente_id,
+            'ambulante_nome': self.cliente.nome if self.cliente else None,
             'data_operacao': self.data_operacao.isoformat() if self.data_operacao else None,
             'status': self.status,
             'total': float(self.total),

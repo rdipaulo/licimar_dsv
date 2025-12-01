@@ -9,7 +9,7 @@ from .config import config
 from .database import db, migrate
 from .models import *
 from .routes.auth import auth_bp
-from .routes.ambulantes import ambulantes_bp
+from .routes.clientes import clientes_bp
 from .routes.produtos import produtos_bp
 from .routes.categorias import categorias_bp
 from .routes.regras_cobranca import regras_cobranca_bp
@@ -68,7 +68,9 @@ def create_app(config_name=None):
 
         print("[APP] Registering blueprints...", flush=True)
         app.register_blueprint(auth_bp, url_prefix='/api/auth')
-        app.register_blueprint(ambulantes_bp, url_prefix='/api/ambulantes')
+        app.register_blueprint(clientes_bp, url_prefix='/api/clientes')
+        # Alias para compatibilidade com código legado
+        app.register_blueprint(clientes_bp, url_prefix='/api/ambulantes')
         app.register_blueprint(produtos_bp, url_prefix='/api/produtos')
         app.register_blueprint(categorias_bp, url_prefix='/api/categorias')
         app.register_blueprint(regras_cobranca_bp, url_prefix='/api/regras-cobranca')

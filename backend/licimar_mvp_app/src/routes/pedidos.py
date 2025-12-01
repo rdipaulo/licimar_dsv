@@ -2,7 +2,7 @@
 Rotas para gerenciamento de pedidos
 """
 from flask import Blueprint, request, jsonify, current_app, render_template, make_response
-from ..models import Pedido, ItemPedido, Produto, Ambulante
+from ..models import Pedido, ItemPedido, Produto, Cliente
 from ..database import db
 from ..utils.decorators import token_required, admin_required, log_action
 from ..utils.helpers import paginate_query, is_gelo_seco
@@ -19,7 +19,7 @@ def get_pedidos():
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
         status = request.args.get('status', '').strip()
-        ambulante_id = request.args.get('ambulante_id', type=int)
+        cliente_id = request.args.get('cliente_id', type=int)
         data_inicio = request.args.get('data_inicio')
         data_fim = request.args.get('data_fim')
         
@@ -31,8 +31,8 @@ def get_pedidos():
             else:
                 query = query.filter(Pedido.status == status)
         
-        if ambulante_id:
-            query = query.filter(Pedido.ambulante_id == ambulante_id)
+        if cliente_id:
+            query = query.filter(Pedido.cliente_id == cliente_id)
         
         if data_inicio:
             try:
@@ -91,20 +91,20 @@ def criar_pedido_saida():
         if not data:
             return jsonify({'message': 'Dados não fornecidos'}), 400
         
-        ambulante_id = data.get('ambulante_id')
-        if not ambulante_id:
-            return jsonify({'message': 'ID do ambulante é obrigatório'}), 400
+        cliente_id = data.get('cliente_id')
+        if not cliente_id:
+            return jsonify({'message': 'ID do cliente é obrigatório'}), 400
         
-        ambulante = Ambulante.query.get(ambulante_id)
-        if not ambulante or ambulante.status != 'ativo':
-            return jsonify({'message': 'Ambulante não encontrado ou inativo'}), 400
+        cliente = Cliente.query.get(cliente_id)
+        if not ambulante or cliente.status != 'ativo':
+            return jsonify({'message': 'Cliente não encontrado ou inativo'}), 400
         
         itens_saida = data.get('itens_saida', [])
         if not itens_saida:
             return jsonify({'message': 'Nenhum item adicionado ao pedido'}), 400
         
         pedido = Pedido(
-            ambulante_id=ambulante_id,
+            cliente_id=cliente_id,
             status='saida',
             observacoes=data.get('observacoes', '')
         )

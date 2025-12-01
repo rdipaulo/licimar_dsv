@@ -10,7 +10,7 @@ export interface User {
   updated_at: string;
 }
 
-export interface Ambulante {
+export interface Cliente {
   id: number;
   nome: string;
   email?: string;
@@ -22,6 +22,9 @@ export interface Ambulante {
   created_at: string;
   updated_at: string;
 }
+
+// Alias para compatibilidade com código legado
+export type cliente = Cliente;
 
 export interface Categoria {
   id: number;
@@ -77,8 +80,8 @@ export interface ItemPedido {
 
 export interface Pedido {
   id: number;
-  ambulante_id: number;
-  ambulante_nome?: string;
+  cliente_id: number;
+  cliente_nome?: string;
   data_operacao: string;
   status: 'saida' | 'retorno' | 'finalizado';
   total: number;
@@ -123,7 +126,7 @@ export interface DashboardMetrics {
   vendas_periodo: number;
   vendas_hoje: number;
   produtos_estoque_baixo: number;
-  ambulantes_ativos: number;
+  clientes_ativos: number;
   pedidos_abertos: number;
   produto_mais_vendido: {
     nome?: string;
@@ -139,7 +142,7 @@ export interface RelatorioVendas {
   filtros: {
     data_inicio?: string;
     data_fim?: string;
-    ambulante_id?: number;
+    cliente_id?: number;
     produto_id?: number;
   };
   resumo: {
@@ -150,7 +153,7 @@ export interface RelatorioVendas {
   dados: Array<{
     pedido_id: number;
     data_operacao: string;
-    ambulante_nome: string;
+    cliente_nome: string;
     produto_nome: string;
     quantidade_saida: number;
     quantidade_retorno: number;
@@ -174,7 +177,7 @@ export interface LoginForm {
   password: string;
 }
 
-export interface AmbulanteForm {
+export interface ClienteForm {
   nome: string;
   email?: string;
   telefone?: string;
@@ -182,6 +185,9 @@ export interface AmbulanteForm {
   endereco?: string;
   status: 'ativo' | 'inativo';
 }
+
+// Alias para compatibilidade com código legado
+export type clienteForm = ClienteForm;
 
 export interface ProdutoForm {
   nome: string;
@@ -213,7 +219,7 @@ export interface UserForm {
 }
 
 export interface PedidoSaidaForm {
-  ambulante_id: number;
+  cliente_id: number;
   itens_saida: Array<{
     produto_id: number;
     quantidade_saida: number;

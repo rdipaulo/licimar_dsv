@@ -10,7 +10,7 @@ import MainLayout from '../components/MainLayout';
 const DashboardPage: React.FC = () => {
   // Dados de exemplo (em produção, viriam da API)
   const metrics = {
-    ambulantesAtivos: 5,
+    clientesAtivos: 5,
     produtosEmEstoque: 10,
     pedidosAbertos: 0,
     usuariosAtivos: 2,
@@ -21,14 +21,14 @@ const DashboardPage: React.FC = () => {
       <div className="space-y-6">
         {/* Cards de Métricas */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Card 1: Ambulantes */}
+          {/* Card 1: clientes */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Ambulantes Ativos</CardTitle>
+              <CardTitle className="text-sm font-medium">clientes Ativos</CardTitle>
               <Users className="h-4 w-4 text-indigo-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metrics.ambulantesAtivos}</div>
+              <div className="text-2xl font-bold">{metrics.clientesAtivos}</div>
               <p className="text-xs text-gray-500 mt-1">Cadastrados no sistema</p>
             </CardContent>
           </Card>
@@ -75,16 +75,16 @@ const DashboardPage: React.FC = () => {
           <CardHeader>
             <CardTitle>Bem-vindo ao Licimar MVP</CardTitle>
             <CardDescription>
-              Sistema de Gestão de Ambulantes e Produtos
+              Sistema de Gestão de clientes e Produtos
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <p className="text-gray-700">
-                Bem-vindo ao Licimar MVP! Este é um sistema de gestão completo para controlar ambulantes, produtos, estoque e pedidos.
+                Bem-vindo ao Licimar MVP! Este é um sistema de gestão completo para controlar clientes, produtos, estoque e pedidos.
               </p>
               <p className="text-gray-600 text-sm">
-                Use o menu lateral para navegar entre as diferentes seções do sistema. Você pode gerenciar ambulantes, produtos, pedidos e muito mais.
+                Use o menu lateral para navegar entre as diferentes seções do sistema. Você pode gerenciar clientes, produtos, pedidos e muito mais.
               </p>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-900">

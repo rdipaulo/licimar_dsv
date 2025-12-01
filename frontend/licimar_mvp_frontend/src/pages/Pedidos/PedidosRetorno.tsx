@@ -181,7 +181,7 @@ export default function PedidosRetorno() {
                   onClick={() => handleSelectPedido(pedido)}
                 >
                   <p className="font-semibold">Pedido #{pedido.id}</p>
-                  <p className="text-sm text-muted-foreground">Ambulante: {pedido.ambulante_nome}</p>
+                  <p className="text-sm text-muted-foreground">cliente: {pedido.cliente_nome}</p>
                   <p className="text-xs text-muted-foreground">Saída: {new Date(pedido.data_operacao).toLocaleDateString()}</p>
                 </div>
               ))
@@ -205,7 +205,7 @@ export default function PedidosRetorno() {
               <>
                 <div className="mb-4">
                   <p>
-                    <strong>Ambulante:</strong> {selectedPedido.ambulante_nome}
+                    <strong>cliente:</strong> {selectedPedido.cliente_nome}
                   </p>
                   <p>
                     <strong>Data de Saída:</strong> {new Date(selectedPedido.data_operacao).toLocaleString()}

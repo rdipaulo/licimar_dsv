@@ -5,10 +5,10 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/services/api';
-import { Ambulante } from '@/types';
+import { cliente } from '@/types';
 
 interface DebtSummary {
-  ambulante: Ambulante;
+  cliente: cliente;
   totalDivida: number;
   totalPedidos: number;
   ultimoPedido?: string;
@@ -27,11 +27,11 @@ export function DashboardDivida() {
   const fetchDebtData = async () => {
     setIsLoading(true);
     try {
-      // Fetch all ambulantes
-      const ambulantesResponse = await apiService.getAmbulantes({
+      // Fetch all clientes
+      const clientesResponse = await apiService.getclientes({
         per_page: 100,
       });
-      const ambulantesList = ambulantesResponse.items || [];
+      const clientesList = clientesResponse.items || [];
 
       // Fetch all finished pedidos
       const pedidosResponse = await apiService.getPedidos({
@@ -40,13 +40,13 @@ export function DashboardDivida() {
       });
       const pedidos = pedidosResponse.items || [];
 
-      // Calculate debt by ambulante
-      const debtMap = new Map<number, { ambulante: Ambulante; divida: number; pedidoCount: number; ultimoPedido?: string }>();
+      // Calculate debt by cliente
+      const debtMap = new Map<number, { cliente: cliente; divida: number; pedidoCount: number; ultimoPedido?: string }>();
 
-      ambulantesList.forEach((ambulante: Ambulante) => {
-        if (!debtMap.has(ambulante.id)) {
-          debtMap.set(ambulante.id, {
-            ambulante,
+      clientesList.forEach((cliente: cliente) => {
+        if (!debtMap.has(cliente.id)) {
+          debtMap.set(cliente.id, {
+            cliente,
             divida: 0,
             pedidoCount: 0,
           });
@@ -54,7 +54,7 @@ export function DashboardDivida() {
       });
 
       pedidos.forEach((pedido: any) => {
-        const entry = debtMap.get(pedido.ambulante_id);
+        const entry = debtMap.get(pedido.cliente_id);
         if (entry) {
           entry.divida += parseFloat(pedido.divida || 0);
           entry.pedidoCount += 1;
@@ -64,9 +64,9 @@ export function DashboardDivida() {
 
       // Convert map to array and sort by debt amount
       const summaries: DebtSummary[] = Array.from(debtMap.values())
-        .filter(entry => entry.divida > 0) // Only show ambulantes with debt
+        .filter(entry => entry.divida > 0) // Only show clientes with debt
         .map(entry => ({
-          ambulante: entry.ambulante,
+          cliente: entry.cliente,
           totalDivida: entry.divida,
           totalPedidos: entry.pedidoCount,
           ultimoPedido: entry.ultimoPedido,
@@ -122,7 +122,7 @@ export function DashboardDivida() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500 mb-1">Ambulantes com Dívida</p>
+                  <p className="text-sm text-gray-500 mb-1">clientes com Dívida</p>
                   <p className="text-3xl font-bold text-orange-600">
                     {debtSummaries.length}
                   </p>
@@ -165,7 +165,7 @@ export function DashboardDivida() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-3 px-4 font-semibold">Ambulante</th>
+                      <th className="text-left py-3 px-4 font-semibold">cliente</th>
                       <th className="text-left py-3 px-4 font-semibold">CPF</th>
                       <th className="text-left py-3 px-4 font-semibold">Telefone</th>
                       <th className="text-right py-3 px-4 font-semibold">Dívida Total</th>
@@ -176,14 +176,14 @@ export function DashboardDivida() {
                   </thead>
                   <tbody>
                     {debtSummaries.map((item) => (
-                      <tr key={item.ambulante.id} className="border-b hover:bg-gray-50">
+                      <tr key={item.cliente.id} className="border-b hover:bg-gray-50">
                         <td className="py-3 px-4">
                           <div>
-                            <p className="font-semibold">{item.ambulante.nome}</p>
+                            <p className="font-semibold">{item.cliente.nome}</p>
                           </div>
                         </td>
-                        <td className="py-3 px-4">{item.ambulante.cpf || '-'}</td>
-                        <td className="py-3 px-4">{item.ambulante.telefone || '-'}</td>
+                        <td className="py-3 px-4">{item.cliente.cpf || '-'}</td>
+                        <td className="py-3 px-4">{item.cliente.telefone || '-'}</td>
                         <td className="py-3 px-4 text-right">
                           <span className="font-bold text-red-600">R$ {item.totalDivida.toFixed(2)}</span>
                         </td>

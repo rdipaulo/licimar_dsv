@@ -4,7 +4,7 @@ Rotas para relatórios personalizados
 from flask import Blueprint, request, jsonify, current_app, send_file
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_
-from ..models import Pedido, ItemPedido, Produto, Ambulante, User
+from ..models import Pedido, ItemPedido, Produto, Cliente, User
 from ..database import db
 from ..utils.decorators import admin_required, log_action
 from ..utils.helpers import generate_report_filename
@@ -24,7 +24,7 @@ def relatorio_vendas():
         # Parâmetros de filtro
         data_inicio = request.args.get('data_inicio')
         data_fim = request.args.get('data_fim')
-        ambulante_id = request.args.get('ambulante_id', type=int)
+        cliente_id = request.args.get('cliente_id', type=int)
         produto_id = request.args.get('produto_id', type=int)
         formato = request.args.get('formato', 'json')  # json, csv, pdf
         
@@ -32,7 +32,7 @@ def relatorio_vendas():
         query = db.session.query(
             Pedido.id.label('pedido_id'),
             Pedido.data_operacao,
-            Ambulante.nome.label('ambulante_nome'),
+            Cliente.nome.label('cliente_nome'),
             Produto.nome.label('produto_nome'),
             ItemPedido.quantidade_saida,
             ItemPedido.quantidade_retorno,
@@ -40,7 +40,7 @@ def relatorio_vendas():
             ItemPedido.preco_unitario,
             ((ItemPedido.quantidade_saida - ItemPedido.quantidade_retorno) * ItemPedido.preco_unitario).label('valor_total')
         ).join(
-            Ambulante, Pedido.ambulante_id == Ambulante.id
+            Ambulante, Pedido.cliente_id == Cliente.id
         ).join(
             ItemPedido, Pedido.id == ItemPedido.pedido_id
         ).join(
@@ -62,8 +62,8 @@ def relatorio_vendas():
             except ValueError:
                 return jsonify({'message': 'Data de fim inválida. Use formato YYYY-MM-DD'}), 400
         
-        if ambulante_id:
-            query = query.filter(Pedido.ambulante_id == ambulante_id)
+        if cliente_id:
+            query = query.filter(Pedido.cliente_id == cliente_id)
         
         if produto_id:
             query = query.filter(ItemPedido.produto_id == produto_id)
@@ -84,7 +84,7 @@ def relatorio_vendas():
             dados.append({
                 'pedido_id': r.pedido_id,
                 'data_operacao': r.data_operacao.isoformat() if r.data_operacao else None,
-                'ambulante_nome': r.ambulante_nome,
+                'cliente_nome': r.cliente_nome,
                 'produto_nome': r.produto_nome,
                 'quantidade_saida': float(r.quantidade_saida),
                 'quantidade_retorno': float(r.quantidade_retorno),
@@ -97,7 +97,7 @@ def relatorio_vendas():
             'filtros': {
                 'data_inicio': data_inicio,
                 'data_fim': data_fim,
-                'ambulante_id': ambulante_id,
+                'cliente_id': cliente_id,
                 'produto_id': produto_id
             },
             'resumo': {
@@ -197,11 +197,11 @@ def relatorio_produtos_mais_vendidos():
         current_app.logger.error(f"Erro ao gerar relatório de produtos mais vendidos: {e}")
         return jsonify({'message': 'Erro interno do servidor'}), 500
 
-@relatorios_bp.route('/performance-ambulantes', methods=['GET'])
+@relatorios_bp.route('/performance-clientes', methods=['GET'])
 @admin_required
-def relatorio_performance_ambulantes():
+def relatorio_performance_clientes():
     """
-    Relatório de performance dos ambulantes
+    Relatório de performance dos clientes
     """
     try:
         # Parâmetros de filtro
@@ -211,13 +211,13 @@ def relatorio_performance_ambulantes():
         
         # Query base
         query = db.session.query(
-            Ambulante.id,
-            Ambulante.nome,
+            Cliente.id,
+            Cliente.nome,
             func.count(Pedido.id).label('total_pedidos'),
             func.sum(Pedido.total).label('total_faturamento'),
             func.avg(Pedido.total).label('ticket_medio')
         ).outerjoin(
-            Pedido, Ambulante.id == Pedido.ambulante_id
+            Pedido, Cliente.id == Pedido.cliente_id
         )
         
         # Aplica filtros de data
@@ -236,7 +236,7 @@ def relatorio_performance_ambulantes():
                 return jsonify({'message': 'Data de fim inválida. Use formato YYYY-MM-DD'}), 400
         
         # Agrupa e ordena
-        query = query.group_by(Ambulante.id, Ambulante.nome)
+        query = query.group_by(Cliente.id, Cliente.nome)
         query = query.order_by(func.sum(Pedido.total).desc())
         
         # Executa a query
@@ -246,8 +246,8 @@ def relatorio_performance_ambulantes():
         dados = []
         for r in resultados:
             dados.append({
-                'ambulante_id': r.id,
-                'ambulante_nome': r.nome,
+                'cliente_id': r.id,
+                'cliente_nome': r.nome,
                 'total_pedidos': r.total_pedidos or 0,
                 'total_faturamento': float(r.total_faturamento or 0),
                 'ticket_medio': float(r.ticket_medio or 0)
@@ -262,7 +262,7 @@ def relatorio_performance_ambulantes():
         }
         
         if formato == 'csv':
-            return _export_csv(dados, 'performance_ambulantes')
+            return _export_csv(dados, 'performance_clientes')
         else:
             return jsonify(relatorio), 200
         
@@ -365,7 +365,7 @@ def dashboard_metrics():
         ).count()
         
         # Total de ambulantes ativos
-        ambulantes_ativos = Ambulante.query.filter_by(status='ativo').count()
+        clientes_ativos = Cliente.query.filter_by(status='ativo').count()
         
         # Pedidos em aberto (status saída)
         pedidos_abertos = Pedido.query.filter_by(status='saida').count()
@@ -409,7 +409,7 @@ def dashboard_metrics():
             'vendas_periodo': float(vendas_periodo),
             'vendas_hoje': float(vendas_hoje),
             'produtos_estoque_baixo': produtos_estoque_baixo,
-            'ambulantes_ativos': ambulantes_ativos,
+            'clientes_ativos': clientes_ativos,
             'pedidos_abertos': pedidos_abertos,
             'produto_mais_vendido': {
                 'nome': produto_mais_vendido.nome if produto_mais_vendido else None,

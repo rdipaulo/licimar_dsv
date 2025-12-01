@@ -145,7 +145,7 @@ export function HistoricoPedidos() {
                   <thead>
                     <tr className="border-b">
                       <th className="text-left py-3 px-4 font-semibold">ID</th>
-                      <th className="text-left py-3 px-4 font-semibold">Ambulante</th>
+                      <th className="text-left py-3 px-4 font-semibold">cliente</th>
                       <th className="text-left py-3 px-4 font-semibold">Data</th>
                       <th className="text-left py-3 px-4 font-semibold">Status</th>
                       <th className="text-right py-3 px-4 font-semibold">Total</th>
@@ -157,7 +157,7 @@ export function HistoricoPedidos() {
                     {pedidos.map((pedido: any) => (
                       <tr key={pedido.id} className="border-b hover:bg-gray-50">
                         <td className="py-3 px-4">#{pedido.id}</td>
-                        <td className="py-3 px-4">{pedido.ambulante?.nome || 'N/A'}</td>
+                        <td className="py-3 px-4">{pedido.cliente?.nome || 'N/A'}</td>
                         <td className="py-3 px-4">
                           {new Date(pedido.data_operacao).toLocaleDateString('pt-BR')}
                         </td>

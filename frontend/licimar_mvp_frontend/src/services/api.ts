@@ -2,7 +2,7 @@
 
 import { 
   User, 
-  Ambulante, 
+  cliente, 
   Categoria, 
   Produto, 
   RegraCobranca, 
@@ -14,7 +14,7 @@ import {
   RelatorioVendas,
   CalculoCobranca,
   LoginForm,
-  AmbulanteForm,
+  clienteForm,
   ProdutoForm,
   CategoriaForm,
   RegraCobrancaForm,
@@ -89,8 +89,8 @@ class ApiService {
     return this.handleResponse(response);
   }
 
-  // Ambulantes
-  async getAmbulantes(params?: { page?: number; per_page?: number; search?: string; status?: string }): Promise<PaginatedResponse<Ambulante>> {
+  // clientes
+  async getclientes(params?: { page?: number; per_page?: number; search?: string; status?: string }): Promise<PaginatedResponse<cliente>> {
     const searchParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -98,21 +98,21 @@ class ApiService {
       });
     }
     
-    const response = await fetch(`${API_BASE_URL}/api/ambulantes?${searchParams}`, {
+    const response = await fetch(`${API_BASE_URL}/api/clientes?${searchParams}`, {
       headers: this.getAuthHeaders()
     });
     return this.handleResponse(response);
   }
 
-  async getAmbulante(id: number): Promise<Ambulante> {
-    const response = await fetch(`${API_BASE_URL}/api/ambulantes/${id}`, {
+  async getcliente(id: number): Promise<cliente> {
+    const response = await fetch(`${API_BASE_URL}/api/clientes/${id}`, {
       headers: this.getAuthHeaders()
     });
     return this.handleResponse(response);
   }
 
-  async createAmbulante(data: AmbulanteForm): Promise<{ message: string; ambulante: Ambulante }> {
-    const response = await fetch(`${API_BASE_URL}/api/ambulantes`, {
+  async createcliente(data: clienteForm): Promise<{ message: string; cliente: cliente }> {
+    const response = await fetch(`${API_BASE_URL}/api/clientes`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(data)
@@ -120,8 +120,8 @@ class ApiService {
     return this.handleResponse(response);
   }
 
-  async updateAmbulante(id: number, data: Partial<AmbulanteForm>): Promise<{ message: string; ambulante: Ambulante }> {
-    const response = await fetch(`${API_BASE_URL}/api/ambulantes/${id}`, {
+  async updatecliente(id: number, data: Partial<clienteForm>): Promise<{ message: string; cliente: cliente }> {
+    const response = await fetch(`${API_BASE_URL}/api/clientes/${id}`, {
       method: 'PUT',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(data)
@@ -129,16 +129,16 @@ class ApiService {
     return this.handleResponse(response);
   }
 
-  async deleteAmbulante(id: number): Promise<ApiResponse<void>> {
-    const response = await fetch(`${API_BASE_URL}/api/ambulantes/${id}`, {
+  async deletecliente(id: number): Promise<ApiResponse<void>> {
+    const response = await fetch(`${API_BASE_URL}/api/clientes/${id}`, {
       method: 'DELETE',
       headers: this.getAuthHeaders()
     });
     return this.handleResponse(response);
   }
 
-  async getAmbulantesAtivos(): Promise<Ambulante[]> {
-    const response = await fetch(`${API_BASE_URL}/api/ambulantes/ativos`, {
+  async getclientesAtivos(): Promise<cliente[]> {
+    const response = await fetch(`${API_BASE_URL}/api/clientes/ativos`, {
       headers: this.getAuthHeaders()
     });
     return this.handleResponse(response);
@@ -378,7 +378,7 @@ class ApiService {
   }
 
   // Pedidos
-  async getPedidos(params?: { page?: number; per_page?: number; status?: string; ambulante_id?: number; data_inicio?: string; data_fim?: string }): Promise<PaginatedResponse<Pedido>> {
+  async getPedidos(params?: { page?: number; per_page?: number; status?: string; cliente_id?: number; data_inicio?: string; data_fim?: string }): Promise<PaginatedResponse<Pedido>> {
     const searchParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -478,7 +478,7 @@ class ApiService {
     return this.handleResponse(response);
   }
 
-  async getRelatorioVendas(params?: { data_inicio?: string; data_fim?: string; ambulante_id?: number; produto_id?: number; formato?: 'json' | 'csv' }): Promise<RelatorioVendas | Blob> {
+  async getRelatorioVendas(params?: { data_inicio?: string; data_fim?: string; cliente_id?: number; produto_id?: number; formato?: 'json' | 'csv' }): Promise<RelatorioVendas | Blob> {
     const searchParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {

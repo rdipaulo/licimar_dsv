@@ -20,7 +20,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, onLogout }) => {
 
   const menuItems = [
     { label: 'Dashboard', icon: FileText, href: '/dashboard' },
-    { label: 'Ambulantes', icon: Truck, href: '/ambulantes' },
+    { label: 'clientes', icon: Truck, href: '/clientes' },
     { label: 'Produtos', icon: Package, href: '/produtos' },
     { label: 'Pedidos', icon: BarChart3, href: '/pedidos', subItems: [
       { label: 'Registro de Saída', icon: Truck, href: '/pedidos/saida' },

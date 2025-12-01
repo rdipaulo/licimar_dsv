@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { MainLayout } from '../../components/MainLayout';
 import { apiService } from '../../services/api';
-import { Ambulante, Produto, PedidoSaidaForm, Pedido } from '../../types';
+import { cliente, Produto, PedidoSaidaForm, Pedido } from '../../types';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
@@ -20,9 +20,9 @@ interface CarrinhoItem {
 
 export default function PedidosSaida() {
   const { toast } = useToast();
-  const [ambulantes, setAmbulantes] = useState<Ambulante[]>([]);
+  const [clientes, setclientes] = useState<cliente[]>([]);
   const [produtos, setProdutos] = useState<Produto[]>([]);
-  const [selectedAmbulanteId, setSelectedAmbulanteId] = useState<number | null>(null);
+  const [selectedclienteId, setSelectedclienteId] = useState<number | null>(null);
   const [pedidoEmEdicao, setPedidoEmEdicao] = useState<Pedido | null>(null);
   const [carrinho, setCarrinho] = useState<CarrinhoItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,19 +31,19 @@ export default function PedidosSaida() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const ambulantesRes = await apiService.getAmbulantesAtivos();
+        const clientesRes = await apiService.getclientesAtivos();
         const produtosRes = await apiService.getProdutos();
-        // Não carrega pedidos em aberto na inicialização, a lógica será movida para o useEffect do selectedAmbulanteId
+        // Não carrega pedidos em aberto na inicialização, a lógica será movida para o useEffect do selectedclienteId
         // const pedidosEmAbertoRes = await apiService.getPedidos({ status: 'saida' });
 
-        setAmbulantes(ambulantesRes);
+        setclientes(clientesRes);
         setProdutos(produtosRes.items || []);
         
-        // Lógica de carregamento de pedido em aberto movida para o useEffect do selectedAmbulanteId
+        // Lógica de carregamento de pedido em aberto movida para o useEffect do selectedclienteId
       } catch (error) {
         toast({
           title: 'Erro ao carregar dados',
-          description: 'Não foi possível carregar a lista de ambulantes e produtos.',
+          description: 'Não foi possível carregar a lista de clientes e produtos.',
           variant: 'destructive',
         });
       } finally {
@@ -53,9 +53,9 @@ export default function PedidosSaida() {
     fetchData();
   }, []);
 
-  // Efeito para carregar pedido em aberto quando o ambulante é selecionado
+  // Efeito para carregar pedido em aberto quando o cliente é selecionado
   useEffect(() => {
-    if (!selectedAmbulanteId) {
+    if (!selectedclienteId) {
       setPedidoEmEdicao(null);
       setCarrinho([]);
       return;
@@ -63,8 +63,8 @@ export default function PedidosSaida() {
 
     async function fetchPedidoEmAberto() {
       try {
-        // Busca pedidos em aberto para o ambulante selecionado
-        const pedidosRes = await apiService.getPedidos({ status: 'saida', ambulante_id: selectedAmbulanteId });
+        // Busca pedidos em aberto para o cliente selecionado
+        const pedidosRes = await apiService.getPedidos({ status: 'saida', cliente_id: selectedclienteId });
         
         if (pedidosRes.items && pedidosRes.items.length > 0) {
           const pedido = pedidosRes.items[0];
@@ -78,7 +78,7 @@ export default function PedidosSaida() {
           })));
           toast({
             title: 'Pedido em Aberto Carregado',
-            description: `O Pedido #${pedido.id} do ambulante ${pedido.ambulante_nome} foi carregado para edição (reforço).`,
+            description: `O Pedido #${pedido.id} do cliente ${pedido.cliente_nome} foi carregado para edição (reforço).`,
           });
         } else {
           setPedidoEmEdicao(null);
@@ -87,13 +87,13 @@ export default function PedidosSaida() {
       } catch (error) {
         toast({
           title: 'Erro ao carregar pedido em aberto',
-          description: 'Não foi possível carregar o pedido em aberto para o ambulante selecionado.',
+          description: 'Não foi possível carregar o pedido em aberto para o cliente selecionado.',
           variant: 'destructive',
         });
       }
     }
     fetchPedidoEmAberto();
-  }, [selectedAmbulanteId]);
+  }, [selectedclienteId]);
 
   const handleAddItem = (produto: Produto, quantidade: number) => {
     if (quantidade <= 0) return;
@@ -146,10 +146,10 @@ export default function PedidosSaida() {
   }, [carrinho]);
 
   const handleFinalizarSaida = async () => {
-    if (!selectedAmbulanteId) {
+    if (!selectedclienteId) {
       toast({
         title: 'Atenção',
-        description: 'Selecione um ambulante para finalizar o pedido.',
+        description: 'Selecione um cliente para finalizar o pedido.',
         variant: 'destructive',
       });
       return;
@@ -165,7 +165,7 @@ export default function PedidosSaida() {
     }
 
     const payload: PedidoSaidaForm = {
-      ambulante_id: Number(selectedAmbulanteId),
+      cliente_id: Number(selectedclienteId),
       itens_saida: carrinho.map(item => ({
         produto_id: item.produto_id,
         quantidade_saida: item.quantidade_saida,
@@ -209,10 +209,10 @@ export default function PedidosSaida() {
       }
 
       // Limpar e recarregar
-      setSelectedAmbulanteId(null);
+      setSelectedclienteId(null);
       setCarrinho([]);
       setPedidoEmEdicao(null);
-      // A lógica de recarregar pedidos em aberto para o ambulante selecionado está no useEffect
+      // A lógica de recarregar pedidos em aberto para o cliente selecionado está no useEffect
       
     } catch (error) {
       toast({
@@ -348,15 +348,15 @@ export default function PedidosSaida() {
           </CardHeader>
           <CardContent className="flex-grow flex flex-col">
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Ambulante</label>
-              <Select onValueChange={value => setSelectedAmbulanteId(Number(value))} value={selectedAmbulanteId?.toString() || ''} disabled={isSubmitting}>
+              <label className="block text-sm font-medium mb-1">cliente</label>
+              <Select onValueChange={value => setSelectedclienteId(Number(value))} value={selectedclienteId?.toString() || ''} disabled={isSubmitting}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o Ambulante" />
+                  <SelectValue placeholder="Selecione o cliente" />
                 </SelectTrigger>
                 <SelectContent>
-                  {ambulantes.map(ambulante => (
-                    <SelectItem key={ambulante.id} value={ambulante.id.toString()}>
-                      {ambulante.nome}
+                  {clientes.map(cliente => (
+                    <SelectItem key={cliente.id} value={cliente.id.toString()}>
+                      {cliente.nome}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -389,7 +389,7 @@ export default function PedidosSaida() {
               <Button
                 onClick={handleFinalizarSaida}
                 className="w-full py-6 text-lg"
-                disabled={!selectedAmbulanteId || carrinho.length === 0 || isSubmitting}
+                disabled={!selectedclienteId || carrinho.length === 0 || isSubmitting}
               >
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 {pedidoEmEdicao ? `Atualizar Pedido #${pedidoEmEdicao.id}` : 'Registrar Saída'}
@@ -398,7 +398,7 @@ export default function PedidosSaida() {
                 <Button
                   onClick={() => {
                     setPedidoEmEdicao(null);
-                    setSelectedAmbulanteId(null);
+                    setSelectedclienteId(null);
                     setCarrinho([]);
                   }}
                   className="w-full mt-2 border rounded-md"

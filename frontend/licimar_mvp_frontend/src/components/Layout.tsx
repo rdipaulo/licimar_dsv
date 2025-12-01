@@ -39,7 +39,7 @@ const navigation = [
 ];
 
 const adminNavigation = [
-  { name: 'Ambulantes', href: '/gerenciar/ambulantes', icon: Users },
+  { name: 'clientes', href: '/gerenciar/clientes', icon: Users },
   { name: 'Produtos', href: '/gerenciar/produtos', icon: Package },
   { name: 'Categorias', href: '/gerenciar/categorias', icon: Tags },
   { name: 'Regras de Cobrança', href: '/gerenciar/regras', icon: Calculator },
