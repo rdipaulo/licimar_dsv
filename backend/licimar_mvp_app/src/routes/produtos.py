@@ -127,10 +127,13 @@ def create_produto():
         except (ValueError, TypeError):
             peso = 0
         
-        # Verifica se produto já existe
-        existing_produto = Produto.query.filter_by(nome=nome).first()
+        # Verifica se produto já existe (nome + categoria)
+        existing_produto = Produto.query.filter(
+            Produto.nome.ilike(nome),
+            Produto.categoria_id == categoria_id
+        ).first()
         if existing_produto:
-            return jsonify({'message': 'Produto com este nome já existe'}), 409
+            return jsonify({'message': 'Produto com este nome e categoria já existe'}), 409
         
         # Cria o produto
         produto = Produto(
@@ -181,13 +184,16 @@ def update_produto(produto_id):
             if not nome:
                 return jsonify({'message': 'Nome é obrigatório'}), 400
             
-            # Verifica se nome já existe em outro produto
-            existing_produto = Produto.query.filter(
-                Produto.nome == nome,
-                Produto.id != produto_id
-            ).first()
-            if existing_produto:
-                return jsonify({'message': 'Produto com este nome já existe'}), 409
+            # Verifica se nome já existe em outro produto (case-insensitive com categoria)
+            # Só valida se o nome foi alterado
+            if nome.lower() != produto.nome.lower():
+                existing_produto = Produto.query.filter(
+                    Produto.nome.ilike(nome),
+                    Produto.categoria_id == (data.get('categoria_id') or produto.categoria_id),
+                    Produto.id != produto_id
+                ).first()
+                if existing_produto:
+                    return jsonify({'message': 'Produto com este nome e categoria já existe'}), 409
             
             produto.nome = nome
         

@@ -17,7 +17,7 @@ class Config:
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     
     # Configurações de CORS
-    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:5173').split(',')
+    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174').split(',')
     
     # Configurações de upload
     UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', 'static/uploads')
@@ -62,17 +62,30 @@ class ProductionConfig(Config):
     def init_app(app):
         Config.init_app(app)
         
-        # Define a URI do banco de dados com caminho absoluto
+        # Define a URI do banco de dados
+        # Prioridade: DATABASE_URL (variável de ambiente) > arquivo local SQLite
         if not app.config.get('SQLALCHEMY_DATABASE_URI'):
-            db_path = os.path.join(app.instance_path, 'licimar.db')
-            app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or f'sqlite:///{db_path}'
+            database_url = os.environ.get('DATABASE_URL')
+            
+            if database_url:
+                # Usar DATABASE_URL da variável de ambiente (PostgreSQL, MySQL, etc.)
+                app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+                print(f"[CONFIG] Database: Using DATABASE_URL from environment")
+            else:
+                # Fallback para SQLite local
+                db_path = os.path.join(app.instance_path, 'licimar.db')
+                app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+                print(f"[CONFIG] Database: Using local SQLite at {db_path}")
         
         # Log para syslog em produção
         import logging
         from logging.handlers import SysLogHandler
-        syslog_handler = SysLogHandler()
-        syslog_handler.setLevel(logging.WARNING)
-        app.logger.addHandler(syslog_handler)
+        try:
+            syslog_handler = SysLogHandler()
+            syslog_handler.setLevel(logging.WARNING)
+            app.logger.addHandler(syslog_handler)
+        except:
+            pass  # SysLog pode não estar disponível em alguns ambientes
 
 class TestingConfig(Config):
     """Configuração para testes"""

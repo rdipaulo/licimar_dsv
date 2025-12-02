@@ -96,7 +96,7 @@ def criar_pedido_saida():
             return jsonify({'message': 'ID do cliente é obrigatório'}), 400
         
         cliente = Cliente.query.get(cliente_id)
-        if not ambulante or cliente.status != 'ativo':
+        if not cliente or cliente.status != 'ativo':
             return jsonify({'message': 'Cliente não encontrado ou inativo'}), 400
         
         itens_saida = data.get('itens_saida', [])
@@ -306,10 +306,11 @@ def criar_pedido_retorno(pedido_id):
             db.session.add(item_pedido)
         
         from datetime import datetime
+        from ..utils.helpers import get_brasilia_now
         pedido.status = 'finalizado' # Altera para finalizado após o retorno
         pedido.divida = float(divida) # Adiciona o campo divida
         pedido.total = pedido.calcular_total() # Recalcula o total com a dívida
-        pedido.updated_at = datetime.utcnow()
+        pedido.updated_at = get_brasilia_now()
         
         db.session.commit()
         return jsonify({

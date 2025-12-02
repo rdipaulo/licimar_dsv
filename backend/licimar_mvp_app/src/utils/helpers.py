@@ -3,9 +3,18 @@ Funções auxiliares e utilitários
 """
 import re
 from datetime import datetime
+import pytz
 from flask import request, current_app
-from ..models import Log, RegraCobranca
 from ..database import db
+
+# Timezone de Brasília
+TZ_BRASILIA = pytz.timezone('America/Sao_Paulo')
+
+def get_brasilia_now():
+    """
+    Retorna data/hora atual em Brasília
+    """
+    return datetime.now(TZ_BRASILIA).replace(tzinfo=None)
 
 def validate_email(email):
     """
@@ -78,6 +87,7 @@ def register_log(user_id, action, details=None):
     Registra uma ação no log do sistema
     """
     try:
+        from ..models import Log
         log_entry = Log(
             user_id=user_id,
             action=action,
@@ -97,6 +107,7 @@ def calcular_desconto_cobranca(valor_pago):
     Calcula o desconto/cobrança baseado nas regras configuradas
     """
     try:
+        from ..models import RegraCobranca
         # Busca a regra aplicável ao valor pago
         regra = RegraCobranca.query.filter(
             RegraCobranca.faixa_inicial <= valor_pago,

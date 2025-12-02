@@ -199,20 +199,29 @@ export default function PedidosSaida() {
         console.log(`[DEBUG] Iniciando impressão da nota de saída para pedido ${pedidoId}`);
         await apiService.imprimirNotaSaida(pedidoId);
         console.log('[DEBUG] Nota de saída impressa com sucesso');
+        toast({
+          title: 'Nota Fiscal',
+          description: 'Nota de saída gerada e envio iniciado. Verifique seu navegador para download.',
+        });
       } catch (error) {
         console.error('[ERROR] Erro ao imprimir nota de saída:', error);
         toast({
-          title: 'Nota Fiscal',
-          description: 'Nota de saída gerada. Verifique seu navegador para download.',
-          variant: 'default',
+          title: 'Aviso',
+          description: 'Pedido registrado. Erro ao gerar PDF. Tente reimprimir no histórico.',
+          variant: 'destructive',
         });
       }
 
-      // Limpar e recarregar
+      // Limpar e recarregar - RESETAR TELA COMPLETAMENTE
       setSelectedclienteId(null);
       setCarrinho([]);
       setPedidoEmEdicao(null);
-      // A lógica de recarregar pedidos em aberto para o cliente selecionado está no useEffect
+      setIsLoading(true);
+      
+      // Recarregar dados iniciais
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
       
     } catch (error) {
       toast({

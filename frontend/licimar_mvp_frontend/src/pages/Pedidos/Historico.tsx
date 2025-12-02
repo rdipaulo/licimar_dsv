@@ -157,7 +157,7 @@ export function HistoricoPedidos() {
                     {pedidos.map((pedido: any) => (
                       <tr key={pedido.id} className="border-b hover:bg-gray-50">
                         <td className="py-3 px-4">#{pedido.id}</td>
-                        <td className="py-3 px-4">{pedido.cliente?.nome || 'N/A'}</td>
+                        <td className="py-3 px-4">{pedido.cliente_nome || pedido.ambulante_nome || 'N/A'}</td>
                         <td className="py-3 px-4">
                           {new Date(pedido.data_operacao).toLocaleDateString('pt-BR')}
                         </td>

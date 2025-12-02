@@ -69,8 +69,8 @@ def create_app(config_name=None):
         print("[APP] Registering blueprints...", flush=True)
         app.register_blueprint(auth_bp, url_prefix='/api/auth')
         app.register_blueprint(clientes_bp, url_prefix='/api/clientes')
-        # Alias para compatibilidade com código legado
-        app.register_blueprint(clientes_bp, url_prefix='/api/ambulantes')
+        # Alias para compatibilidade com código legado - usar name diferente
+        app.register_blueprint(clientes_bp, url_prefix='/api/ambulantes', name='ambulantes')
         app.register_blueprint(produtos_bp, url_prefix='/api/produtos')
         app.register_blueprint(categorias_bp, url_prefix='/api/categorias')
         app.register_blueprint(regras_cobranca_bp, url_prefix='/api/regras-cobranca')

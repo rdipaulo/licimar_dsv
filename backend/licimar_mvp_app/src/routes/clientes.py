@@ -116,6 +116,13 @@ def create_cliente():
             if existing_cliente:
                 return jsonify({'message': 'CPF já cadastrado'}), 409
         
+        # Verifica se cliente com mesmo nome já existe (case-insensitive)
+        existing_cliente = Cliente.query.filter(
+            Cliente.nome.ilike(nome)
+        ).first()
+        if existing_cliente:
+            return jsonify({'message': 'Cliente com este nome já existe'}), 409
+        
         # Cria o cliente
         cliente = Cliente(
             nome=nome,

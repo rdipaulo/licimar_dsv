@@ -1,23 +1,42 @@
-# RESUMO DE CORREÇÕES REALIZADAS - SISTEMA LICIMAR MVP
+# ✅ RESUMO EXECUTIVO - CORREÇÕES FINALIZADAS
 
-## Data: 2025-11-28
-## Status: ✅ CONCLUÍDO E TESTADO
+**Data:** 01/12/2025  
+**Status:** 6 Issues Críticos Resolvidos  
+**Pronto para:** Browser Testing + Produção
 
 ---
 
-## 🎯 PROBLEMAS RESOLVIDOS
+## 📋 CORREÇÕES IMPLEMENTADAS
 
-### 1. ✅ Resumo da Saída Não Estava Sendo Impresso
-**Problema:** Botão de imprimir não fornecia feedback visual
-**Solução:** 
-- Adicionado logging console.log() para rastreamento de execução
-- Alterado toast de feedback para mensagem mais clara
-- Toast agora mostra: "Nota de saída gerada. Verifique seu navegador para download."
-- Arquivo: `frontend/licimar_mvp_frontend/src/pages/PedidosSaida.tsx` (linhas 195-207)
+### ✅ 1. Preço não atualiza - "Produto com esse nome já existe"
+**Arquivo:** `backend/licimar_mvp_app/src/routes/produtos.py` (linha 186)
+**Fix:** Validação case-insensitive + verifica apenas se nome mudou
+**Status:** ✓ PRONTO
 
-**Verificado:** 
-- ✓ Backend endpoints existem: `/api/pedidos/<id>/imprimir`
-- ✓ Frontend chama corretamente com fetch e blob handling
+### ✅ 2. Campo Gelo muito pequeno  
+**Arquivo:** `frontend/licimar_mvp_frontend/src/pages/Pedidos/PedidosRetorno.tsx` (linha 244)
+**Fix:** w-12→w-16, h-6→h-8, botões maiores, gap-2 espaçamento
+**Status:** ✓ PRONTO
+
+### ✅ 3. Campo Dívida muito pequeno (NOVO)
+**Arquivo:** `frontend/licimar_mvp_frontend/src/pages/Pedidos/PedidosRetorno.tsx` (linha 300)
+**Fix:** w-32→w-48, h-10, text-xl font-semibold
+**Status:** ✓ PRONTO
+
+### ✅ 4. Saida não persiste - Bug variável undefined
+**Arquivo:** `backend/licimar_mvp_app/src/routes/pedidos.py` (linha 97)
+**Fix:** `ambulante` → `cliente` (correção crítica)
+**Status:** ✓ TESTADO - Pedido #1 criado com sucesso
+
+### ✅ 5. Print não funciona + Tela não reseta
+**Arquivo:** `frontend/licimar_mvp_frontend/src/pages/Pedidos/PedidosSaida.tsx` (linha 195)
+**Fix:** Toast notification + error handling + setTimeout reload(1500ms)
+**Status:** ✓ PRONTO
+
+### ✅ 6. Saida não aparece em retorno/histórico
+**Arquivo:** `backend/licimar_mvp_app/src/routes/pedidos.py` (linha 97)
+**Fix:** Mesmo fix do item 4 - agora persiste e aparece
+**Status:** ✓ VERIFICADO
 - ✓ Erros agora são logados no console
 
 ---

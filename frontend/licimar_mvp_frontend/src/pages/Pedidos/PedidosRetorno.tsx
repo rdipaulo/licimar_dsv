@@ -17,6 +17,7 @@ export default function PedidosRetorno() {
   const [pedidosEmAberto, setPedidosEmAberto] = useState<Pedido[]>([]);
   const [selectedPedido, setSelectedPedido] = useState<Pedido | null>(null);
   const [retornoQuantities, setRetornoQuantities] = useState<Record<number, number>>({});
+  const [geloKg, setGeloKg] = useState(0);
   const [divida, setDivida] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -114,6 +115,7 @@ export default function PedidosRetorno() {
       // Assumindo que o backend foi ajustado para aceitar um campo 'divida' no payload
       const payloadComDivida = {
         ...payload,
+        gelo_kg: geloKg,
         divida: divida,
       };
 
@@ -139,6 +141,7 @@ export default function PedidosRetorno() {
       });
       setSelectedPedido(null);
       setRetornoQuantities({});
+      setGeloKg(0);
       setDivida(0);
       fetchPedidosEmAberto();
     } catch (error) {
@@ -215,11 +218,12 @@ export default function PedidosRetorno() {
                 <div className="flex-grow overflow-y-auto border p-4 rounded-md">
                   <div className="mb-4">
                     <h3 className="text-lg font-semibold mb-3">Itens para Retorno</h3>
-                    <div className="grid grid-cols-5 gap-4 items-center border-b pb-2 mb-3 font-semibold text-sm">
+                    <div className="grid grid-cols-6 gap-2 items-center border-b pb-2 mb-3 font-semibold text-sm">
                       <div className="col-span-2">Produto</div>
                       <div className="text-center">Saída</div>
                       <div className="text-center">Retorno</div>
-                      <div className="text-right">Valor Total</div>
+                      <div className="text-center">Vendido</div>
+                      <div className="text-right">Total</div>
                     </div>
                   </div>
                   {selectedPedido.itens.map(item => {
@@ -241,17 +245,17 @@ export default function PedidosRetorno() {
                         {/* Coluna 4: Retorno (int) */}
                         <div className="text-center">
                           {item.produto_nao_devolve ? (
-                            <div className="p-1 bg-gray-100 rounded text-xs text-red-600">Não Devolve</div>
+                            <div className="p-2 bg-red-100 rounded text-xs text-red-700 font-medium">Não Devolve</div>
                           ) : (
-                            <div className="flex items-center justify-center space-x-1">
+                            <div className="flex items-center justify-center gap-2">
                               <Button
                                 variant="outline"
-                                size="icon"
-                                className="h-6 w-6"
+                                size="sm"
+                                className="h-8 w-8 p-0"
                                 onClick={() => handleRetornoDecrement(item.id)}
                                 disabled={(retornoQuantities[item.id] || 0) <= 0}
                               >
-                                <Minus className="h-3 w-3" />
+                                <Minus className="h-4 w-4" />
                               </Button>
                               <Input
                                 type="number"
@@ -259,12 +263,12 @@ export default function PedidosRetorno() {
                                 max={maxRetorno}
                                 value={retornoQuantities[item.id] || 0}
                                 onChange={e => handleRetornoChange(item.id, e.target.value)}
-                                className="w-12 h-6 text-center text-xs"
+                                className="w-16 h-8 text-center text-sm font-semibold"
                               />
                               <Button
                                 variant="outline"
-                                size="icon"
-                                className="h-6 w-6"
+                                size="sm"
+                                className="h-8 w-8 p-0"
                                 onClick={() => handleRetornoIncrement(item.id, maxRetorno)}
                                 disabled={(retornoQuantities[item.id] || 0) >= maxRetorno}
                               >
@@ -296,6 +300,22 @@ export default function PedidosRetorno() {
                     <span>R$ {(totalGeral - divida).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center mb-4">
+                    <Label htmlFor="gelo" className="text-lg font-semibold">Gelo Retorno (kg):</Label>
+                    <Input
+                      id="gelo"
+                      type="text"
+                      inputMode="decimal"
+                      value={geloKg === 0 ? '' : geloKg.toFixed(3).replace('.', ',')}
+                      onChange={(e) => {
+                        const rawValue = e.target.value.replace(',', '.');
+                        const valor = parseFloat(rawValue) || 0;
+                        setGeloKg(Math.max(0, valor));
+                      }}
+                      className="w-16 h-8 text-xl text-right font-semibold"
+                      placeholder="0,000"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center mb-4">
                     <Label htmlFor="divida" className="text-lg font-semibold">Cobrança de Dívida:</Label>
                     <Input
                       id="divida"
@@ -307,7 +327,7 @@ export default function PedidosRetorno() {
                         const valor = parseFloat(rawValue) || 0;
                         setDivida(Math.max(0, valor));
                       }}
-                      className="w-32 text-right"
+                      className="w-48 h-10 text-xl text-right font-semibold"
                       placeholder="0,00"
                     />
                   </div>

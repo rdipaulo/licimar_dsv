@@ -2,9 +2,17 @@
 Modelos de banco de dados para o sistema Licimar
 """
 from datetime import datetime
+import pytz
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from .database import db
+
+# Timezone de Brasília
+TZ_BRASILIA = pytz.timezone('America/Sao_Paulo')
+
+def get_brasilia_now():
+    """Retorna data/hora atual em Brasília"""
+    return datetime.now(TZ_BRASILIA).replace(tzinfo=None)
 
 class User(db.Model):
     """Modelo para usuários do sistema"""
@@ -16,8 +24,8 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), default='operador', nullable=False)  # 'admin' ou 'operador'
     active = db.Column(db.Boolean, default=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_brasilia_now)
+    updated_at = db.Column(db.DateTime, default=get_brasilia_now, onupdate=get_brasilia_now)
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -53,14 +61,11 @@ class Cliente(db.Model):
     endereco = db.Column(db.Text)
     status = db.Column(db.String(20), default='ativo', nullable=False)  # 'ativo' ou 'inativo'
     divida_acumulada = db.Column(db.Numeric(10, 2), default=0)  # Dívida acumulada do cliente
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_brasilia_now)
+    updated_at = db.Column(db.DateTime, default=get_brasilia_now, onupdate=get_brasilia_now)
     
     # Relacionamentos
     pedidos = db.relationship('Pedido', backref='cliente', lazy=True)
-
-# Alias para compatibilidade com código legado
-Ambulante = Cliente
     
     def to_dict(self):
         """Converte o objeto para dicionário"""
@@ -77,6 +82,9 @@ Ambulante = Cliente
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
 
+# Alias para compatibilidade com código legado
+Ambulante = Cliente
+
 class Categoria(db.Model):
     """Modelo para categorias de produtos"""
     __tablename__ = 'categorias'
@@ -85,8 +93,8 @@ class Categoria(db.Model):
     nome = db.Column(db.String(100), nullable=False, unique=True)
     descricao = db.Column(db.Text)
     active = db.Column(db.Boolean, default=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_brasilia_now)
+    updated_at = db.Column(db.DateTime, default=get_brasilia_now, onupdate=get_brasilia_now)
     
     # Relacionamentos
     produtos = db.relationship('Produto', backref='categoria_obj', lazy=True)
@@ -117,8 +125,8 @@ class Produto(db.Model):
     estoque_minimo = db.Column(db.Integer, default=10)  # Para alertas de estoque baixo
     nao_devolve = db.Column(db.Boolean, default=False, nullable=False) # Se o produto não pode ser devolvido (ex: Gelo Seco)
     peso = db.Column(db.Numeric(5, 2), default=0) # Peso em kg para produtos como gelo seco (1.5, 1.7, etc)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_brasilia_now)
+    updated_at = db.Column(db.DateTime, default=get_brasilia_now, onupdate=get_brasilia_now)
     
     # Relacionamentos
     itens_pedido = db.relationship('ItemPedido', backref='produto', lazy=True)
@@ -157,8 +165,8 @@ class RegraCobranca(db.Model):
     percentual = db.Column(db.Numeric(5, 2), nullable=False)  # Percentual de desconto/cobrança
     descricao = db.Column(db.String(255))
     active = db.Column(db.Boolean, default=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_brasilia_now)
+    updated_at = db.Column(db.DateTime, default=get_brasilia_now, onupdate=get_brasilia_now)
     
     def to_dict(self):
         """Converte o objeto para dicionário"""
@@ -179,13 +187,13 @@ class Pedido(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=False)
-    data_operacao = db.Column(db.DateTime, default=datetime.utcnow)
+    data_operacao = db.Column(db.DateTime, default=get_brasilia_now)
     status = db.Column(db.String(20), default='saida', nullable=False)  # 'saida', 'retorno', 'finalizado'
     total = db.Column(db.Numeric(10, 2), default=0)
     divida = db.Column(db.Numeric(10, 2), default=0) # Novo campo para dívida
     observacoes = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_brasilia_now)
+    updated_at = db.Column(db.DateTime, default=get_brasilia_now, onupdate=get_brasilia_now)
     
     # Relacionamentos
     itens = db.relationship('ItemPedido', backref='pedido', lazy=True, cascade='all, delete-orphan')
@@ -230,7 +238,7 @@ class ItemPedido(db.Model):
     quantidade_saida = db.Column(db.Integer, nullable=False, default=0)  # INT para quantidade
     quantidade_retorno = db.Column(db.Integer, nullable=False, default=0)  # INT para quantidade
     preco_unitario = db.Column(db.Numeric(10, 2), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_brasilia_now)
     
     def quantidade_vendida(self):
         """Calcula a quantidade vendida (saída - retorno)"""
@@ -265,7 +273,7 @@ class Log(db.Model):
     details = db.Column(db.Text)
     ip_address = db.Column(db.String(45))  # IPv6 pode ter até 45 caracteres
     user_agent = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_brasilia_now)
     
     # Relacionamento
     user = db.relationship('User', backref='logs')
