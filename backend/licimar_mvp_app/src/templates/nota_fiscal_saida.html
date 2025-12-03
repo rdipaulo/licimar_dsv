@@ -4,29 +4,32 @@
     <title>Nota Fiscal de Saída - Pedido #{{ pedido.id }}</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; font-size: 10pt; }
-        .container { width: 80mm; margin: 0 auto; border: 1px solid #000; padding: 10px; }
-        .header { text-align: center; margin-bottom: 10px; border-bottom: 1px solid #000; padding-bottom: 5px; }
-        .header h1 { font-size: 14pt; margin: 0; }
-        .details, .footer { margin-top: 10px; }
-        .details p, .footer p { margin: 2px 0; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #000; padding: 3px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .total { font-weight: bold; text-align: right; }
+        .container { width: 80mm; margin: 0 auto; border: 2px solid #000; padding: 15px; }
+        .header { text-align: center; margin-bottom: 15px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+        .header h1 { font-size: 16pt; margin: 0; font-weight: bold; }
+        .header p { margin: 3px 0; }
+        .details, .footer { margin-top: 10px; font-size: 9pt; }
+        .details p, .footer p { margin: 3px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9pt; }
+        th, td { border: 1px solid #000; padding: 4px; text-align: left; }
+        th { background-color: #ddd; font-weight: bold; }
+        .total-row { font-weight: bold; background-color: #f5f5f5; }
+        .total { font-weight: bold; text-align: right; margin-top: 10px; font-size: 11pt; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Licimar MVP</h1>
-            <p>Sistema de Gestão de Ambulantes</p>
-            <p>NOTA DE SAÍDA</p>
+            <h1>LICIMAR MVP</h1>
+            <p>Sistema de Gestão de Vendas</p>
+            <hr style="margin: 5px 0; border: none; border-top: 2px solid #000;">
+            <p style="margin-top: 5px;">NOTA DE SAÍDA</p>
         </div>
         
         <div class="details">
-            <p><strong>Pedido Nº:</strong> {{ pedido.id }}</p>
-            <p><strong>Ambulante:</strong> {{ pedido.ambulante.nome }}</p>
-            <p><strong>Data da Saída:</strong> {{ pedido.data_operacao.strftime('%d/%m/%Y %H:%M:%S') }}</p>
+            <p><strong>Pedido Nº:</strong> #{{ pedido.id }}</p>
+            <p><strong>Ambulante/Cliente:</strong> {{ pedido.cliente_nome }}</p>
+            <p><strong>Data:</strong> {{ pedido.data_operacao.strftime('%d/%m/%Y %H:%M') }}</p>
             <p><strong>Status:</strong> {{ pedido.status.upper() }}</p>
         </div>
         
@@ -34,20 +37,27 @@
             <thead>
                 <tr>
                     <th>Produto</th>
-                    <th>Qtde. Saída</th>
-                    <th>Preço Unit.</th>
-                    <th>Total</th>
+                    <th style="text-align: center;">Qtde.</th>
+                    <th style="text-align: right;">Preço</th>
+                    <th style="text-align: right;">Total</th>
                 </tr>
             </thead>
             <tbody>
                 {{ itens_html | safe }}
+                <tr class="total-row">
+                    <td colspan="3" style="text-align: right;">TOTAL:</td>
+                    <td style="text-align: right;">R$ {{ "%.2f" | format(pedido.total) }}</td>
+                </tr>
             </tbody>
         </table>
         
         <div class="footer">
-            <p class="total">Total Estimado: R$ {{ "%.2f" | format(pedido.total) }}</p>
-            <p>Observações: {{ pedido.observacoes or 'Nenhuma' }}</p>
-            <p style="text-align: center; margin-top: 20px;">Obrigado!</p>
+            <p style="text-align: center; margin-top: 15px; border-top: 1px solid #000; padding-top: 10px;">Obrigado pela preferência!</p>
+            <p style="text-align: center; font-size: 8pt; margin-top: 5px;">{{ "Gerado em " + pedido.data_operacao.strftime('%d/%m/%Y às %H:%M:%S') }}</p>
+        </div>
+    </div>
+</body>
+</html>
         </div>
     </div>
 </body>

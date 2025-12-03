@@ -200,12 +200,12 @@ class Pedido(db.Model):
     
     def calcular_total(self):
         """Calcula o total do pedido baseado nos itens e adiciona a dívida"""
-        total_itens = 0
+        total_itens = 0.0
         for item in self.itens:
-            quantidade_vendida = item.quantidade_saida - item.quantidade_retorno
-            total_itens += quantidade_vendida * item.preco_unitario
+            quantidade_vendida = float(item.quantidade_saida) - float(item.quantidade_retorno)
+            total_itens += float(quantidade_vendida * float(item.preco_unitario))
         
-        total_final = total_itens + float(self.divida)
+        total_final = float(total_itens) + float(self.divida or 0)
         self.total = total_final
         return total_final
     
@@ -235,7 +235,7 @@ class ItemPedido(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     pedido_id = db.Column(db.Integer, db.ForeignKey('pedidos.id'), nullable=False)
     produto_id = db.Column(db.Integer, db.ForeignKey('produtos.id'), nullable=False)
-    quantidade_saida = db.Column(db.Integer, nullable=False, default=0)  # INT para quantidade
+    quantidade_saida = db.Column(db.Numeric(10, 3), nullable=False, default=0)  # NUMERIC para suportar decimais (ex: 2.500 kg)
     quantidade_retorno = db.Column(db.Integer, nullable=False, default=0)  # INT para quantidade
     preco_unitario = db.Column(db.Numeric(10, 2), nullable=False)
     created_at = db.Column(db.DateTime, default=get_brasilia_now)

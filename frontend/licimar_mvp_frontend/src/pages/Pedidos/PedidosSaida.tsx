@@ -197,11 +197,22 @@ export default function PedidosSaida() {
       // IMPRIMIR NOTA FISCAL (Requisito do Usuário)
       try {
         console.log(`[DEBUG] Iniciando impressão da nota de saída para pedido ${pedidoId}`);
-        await apiService.imprimirNotaSaida(pedidoId);
+        const blob = await apiService.imprimirNotaSaida(pedidoId);
         console.log('[DEBUG] Nota de saída impressa com sucesso');
+        
+        // Trigger download do PDF
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `nota_fiscal_saida_pedido_${pedidoId}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
         toast({
           title: 'Nota Fiscal',
-          description: 'Nota de saída gerada e envio iniciado. Verifique seu navegador para download.',
+          description: 'Nota de saída gerada e download iniciado.',
         });
       } catch (error) {
         console.error('[ERROR] Erro ao imprimir nota de saída:', error);
@@ -298,24 +309,35 @@ export default function PedidosSaida() {
                       <label className="text-xs text-muted-foreground">Quantidade (kg):</label>
                       <input
                         type="number"
-                        step="0.001"
+                        inputMode="decimal"
+                        step="any"
                         min="0"
-                        max={produto.estoque}
-                        value={carrinho.find(item => item.produto_id === produto.id)?.quantidade_saida || 0}
+                        max="9999"
+                        value={
+                          (() => {
+                            const qtd = carrinho.find(item => item.produto_id === produto.id)?.quantidade_saida || 0;
+                            return qtd === 0 ? '' : String(qtd);
+                          })()
+                        }
                         onChange={(e) => {
-                          // Substitui vírgula por ponto para garantir que parseFloat funcione corretamente
-                          const rawValue = e.target.value.replace(',', '.');
-                          const valor = parseFloat(rawValue) || 0;
-                          
-                          // Garante que o valor não é negativo
-                          const finalValue = Math.max(0, valor);
-
-                          if (finalValue >= 0) {
-                            handleUpdateItemQuantity(produto.id, finalValue);
+                          const rawValue = e.target.value.trim();
+                          if (rawValue === '') {
+                            handleUpdateItemQuantity(produto.id, 0);
+                          } else {
+                            const valor = parseFloat(rawValue);
+                            if (!isNaN(valor) && valor >= 0) {
+                              handleUpdateItemQuantity(produto.id, valor);
+                            }
                           }
                         }}
-                        className="w-full px-2 py-1 border rounded text-center"
-                        placeholder="0.000"
+                        onBlur={(e) => {
+                          const valor = parseFloat(e.target.value) || 0;
+                          if (valor < 0) {
+                            handleUpdateItemQuantity(produto.id, 0);
+                          }
+                        }}
+                        className="w-full px-2 py-1 border rounded text-center text-right font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="0"
                       />
                     </div>
                   ) : (

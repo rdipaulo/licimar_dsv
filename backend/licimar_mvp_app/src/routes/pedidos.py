@@ -147,7 +147,7 @@ def criar_pedido_saida():
             )
             
             db.session.add(item_pedido)
-            total_pedido += float(quantidade_saida * produto.preco)
+            total_pedido += float(quantidade_saida) * float(produto.preco)
         
         pedido.total = total_pedido
         
@@ -226,12 +226,12 @@ def atualizar_pedido_saida(pedido_id):
             )
             
             db.session.add(item_pedido)
-            total_pedido += float(quantidade_saida * produto.preco)
+            total_pedido += float(quantidade_saida) * float(produto.preco)
         
-        from datetime import datetime
+        from ..models import get_brasilia_now
         pedido.total = total_pedido
         pedido.observacoes = data.get('observacoes', pedido.observacoes)
-        pedido.updated_at = datetime.utcnow()
+        pedido.updated_at = get_brasilia_now()
         
         db.session.commit()
         
@@ -305,8 +305,7 @@ def criar_pedido_retorno(pedido_id):
             item_pedido.quantidade_retorno = quantidade_retorno
             db.session.add(item_pedido)
         
-        from datetime import datetime
-        from ..utils.helpers import get_brasilia_now
+        from ..models import get_brasilia_now
         pedido.status = 'finalizado' # Altera para finalizado após o retorno
         pedido.divida = float(divida) # Adiciona o campo divida
         pedido.total = pedido.calcular_total() # Recalcula o total com a dívida

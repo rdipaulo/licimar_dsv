@@ -513,62 +513,38 @@ class ApiService {
   }
 
   // Impressão de Notas Fiscais
-  async imprimirNotaSaida(pedidoId: number): Promise<void> {
-    try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/api/pedidos/${pedidoId}/imprimir`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Erro ao gerar nota: ${response.status}`);
+  async imprimirNotaSaida(pedidoId: number): Promise<Blob> {
+    const token = localStorage.getItem('access_token');
+    const response = await fetch(`${API_BASE_URL}/api/pedidos/${pedidoId}/imprimir`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
+    });
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `nota_fiscal_saida_${pedidoId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Erro ao imprimir nota de saída:', error);
-      throw error;
+    if (!response.ok) {
+      throw new Error(`Erro ao gerar nota: ${response.status}`);
     }
+
+    const blob = await response.blob();
+    return blob;
   }
 
-  async imprimirNotaRetorno(pedidoId: number): Promise<void> {
-    try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/api/pedidos/${pedidoId}/imprimir_retorno`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Erro ao gerar nota: ${response.status}`);
+  async imprimirNotaRetorno(pedidoId: number): Promise<Blob> {
+    const token = localStorage.getItem('access_token');
+    const response = await fetch(`${API_BASE_URL}/api/pedidos/${pedidoId}/imprimir_retorno`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
+    });
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `nota_fiscal_retorno_${pedidoId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Erro ao imprimir nota de retorno:', error);
-      throw error;
+    if (!response.ok) {
+      throw new Error(`Erro ao gerar nota: ${response.status}`);
     }
+
+    const blob = await response.blob();
+    return blob;
   }
 }
 

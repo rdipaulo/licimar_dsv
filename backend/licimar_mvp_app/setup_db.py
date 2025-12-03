@@ -52,23 +52,23 @@ def setup_database():
         # 3. Criar produtos
         print("[SETUP] Criando produtos...")
         produtos_dados = [
-            {'nome': 'Picolé Chicabon', 'preco': 2.50, 'estoque': 100, 'categoria': 'Kibon'},
-            {'nome': 'Picolé Chicabon Zero', 'preco': 3.00, 'estoque': 80, 'categoria': 'Kibon'},
-            {'nome': 'Eskibon Classico', 'preco': 2.75, 'estoque': 120, 'categoria': 'Kibon'},
-            {'nome': 'Chambinho', 'preco': 2.50, 'estoque': 90, 'categoria': 'Kibon'},
-            {'nome': 'Picolé Fruttare Coco', 'preco': 3.50, 'estoque': 70, 'categoria': 'Kibon'},
-            {'nome': 'Cone Crocante Nestle', 'preco': 3.50, 'estoque': 85, 'categoria': 'Nestle'},
-            {'nome': 'Cone KitKat', 'preco': 4.00, 'estoque': 60, 'categoria': 'Nestle'},
-            {'nome': 'Cornetto Crocante', 'preco': 3.75, 'estoque': 75, 'categoria': 'Nestle'},
-            {'nome': 'Cornetto M&Ms', 'preco': 4.25, 'estoque': 50, 'categoria': 'Nestle'},
-            {'nome': 'Sorvete Magnum', 'preco': 5.00, 'estoque': 40, 'categoria': 'Nestle'},
-            {'nome': 'Brigadeiro', 'preco': 1.50, 'estoque': 200, 'categoria': 'Kibon'},
-            {'nome': 'Frutilly', 'preco': 2.50, 'estoque': 110, 'categoria': 'Italia'},
-            {'nome': 'Sorvete Premium Italia', 'preco': 4.50, 'estoque': 55, 'categoria': 'Italia'},
-            {'nome': 'Gelo Seco (kg)', 'preco': 15.00, 'estoque': 30, 'categoria': 'Gelo'},
-            {'nome': 'Sacola Termica', 'preco': 8.00, 'estoque': 25, 'categoria': 'Acessorios'},
-            {'nome': 'Caixa de Isopor', 'preco': 12.00, 'estoque': 20, 'categoria': 'Acessorios'},
-            {'nome': 'Leite Moca', 'preco': 2.00, 'estoque': 150, 'categoria': 'Outros'},
+            {'nome': 'Picolé Chicabon', 'preco': 2.50, 'estoque': 100, 'categoria': 'Kibon', 'nao_devolve': False},
+            {'nome': 'Picolé Chicabon Zero', 'preco': 3.00, 'estoque': 80, 'categoria': 'Kibon', 'nao_devolve': False},
+            {'nome': 'Eskibon Classico', 'preco': 2.75, 'estoque': 120, 'categoria': 'Kibon', 'nao_devolve': False},
+            {'nome': 'Chambinho', 'preco': 2.50, 'estoque': 90, 'categoria': 'Kibon', 'nao_devolve': False},
+            {'nome': 'Picolé Fruttare Coco', 'preco': 3.50, 'estoque': 70, 'categoria': 'Kibon', 'nao_devolve': False},
+            {'nome': 'Cone Crocante Nestle', 'preco': 3.50, 'estoque': 85, 'categoria': 'Nestle', 'nao_devolve': False},
+            {'nome': 'Cone KitKat', 'preco': 4.00, 'estoque': 60, 'categoria': 'Nestle', 'nao_devolve': False},
+            {'nome': 'Cornetto Crocante', 'preco': 3.75, 'estoque': 75, 'categoria': 'Nestle', 'nao_devolve': False},
+            {'nome': 'Cornetto M&Ms', 'preco': 4.25, 'estoque': 50, 'categoria': 'Nestle', 'nao_devolve': False},
+            {'nome': 'Sorvete Magnum', 'preco': 5.00, 'estoque': 40, 'categoria': 'Nestle', 'nao_devolve': False},
+            {'nome': 'Brigadeiro', 'preco': 1.50, 'estoque': 200, 'categoria': 'Kibon', 'nao_devolve': False},
+            {'nome': 'Frutilly', 'preco': 2.50, 'estoque': 110, 'categoria': 'Italia', 'nao_devolve': False},
+            {'nome': 'Sorvete Premium Italia', 'preco': 4.50, 'estoque': 55, 'categoria': 'Italia', 'nao_devolve': False},
+            {'nome': 'Gelo Seco (kg)', 'preco': 15.00, 'estoque': 30, 'categoria': 'Gelo', 'nao_devolve': True},
+            {'nome': 'Sacola Termica', 'preco': 8.00, 'estoque': 25, 'categoria': 'Acessorios', 'nao_devolve': True},
+            {'nome': 'Caixa de Isopor', 'preco': 12.00, 'estoque': 20, 'categoria': 'Acessorios', 'nao_devolve': True},
+            {'nome': 'Leite Moca', 'preco': 2.00, 'estoque': 150, 'categoria': 'Outros', 'nao_devolve': False},
         ]
         
         for prod_data in produtos_dados:
@@ -80,10 +80,15 @@ def setup_database():
                     preco=prod_data['preco'],
                     estoque=prod_data['estoque'],
                     categoria_id=cat.id if cat else None,
-                    active=True
+                    active=True,
+                    nao_devolve=prod_data.get('nao_devolve', False)
                 )
                 db.session.add(prod)
                 print("  [OK] Produto {} criado".format(prod_data['nome']))
+            else:
+                # ATUALIZAR produtos existentes com novo flag nao_devolve
+                prod.nao_devolve = prod_data.get('nao_devolve', False)
+                print("  [OK] Produto {} atualizado (nao_devolve={})".format(prod_data['nome'], prod.nao_devolve))
         
         db.session.commit()
         

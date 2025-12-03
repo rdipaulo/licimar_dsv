@@ -17,7 +17,6 @@ export default function PedidosRetorno() {
   const [pedidosEmAberto, setPedidosEmAberto] = useState<Pedido[]>([]);
   const [selectedPedido, setSelectedPedido] = useState<Pedido | null>(null);
   const [retornoQuantities, setRetornoQuantities] = useState<Record<number, number>>({});
-  const [geloKg, setGeloKg] = useState(0);
   const [divida, setDivida] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -111,11 +110,9 @@ export default function PedidosRetorno() {
 
     setIsSubmitting(true);
     try {
-      // O backend precisa ser ajustado para aceitar e processar o campo 'divida'
-      // Assumindo que o backend foi ajustado para aceitar um campo 'divida' no payload
+      // Payload com dívida
       const payloadComDivida = {
         ...payload,
-        gelo_kg: geloKg,
         divida: divida,
       };
 
@@ -124,7 +121,18 @@ export default function PedidosRetorno() {
       // IMPRIMIR NOTA FISCAL FINAL (Requisito do Usuário)
       try {
         console.log(`[DEBUG] Iniciando impressão da nota de retorno para pedido ${selectedPedido.id}`);
-        await apiService.imprimirNotaRetorno(selectedPedido.id);
+        const blob = await apiService.imprimirNotaRetorno(selectedPedido.id);
+        
+        // Trigger download do PDF
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `nota_fiscal_retorno_pedido_${selectedPedido.id}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
         console.log('[DEBUG] Nota de retorno impressa com sucesso');
       } catch (error) {
         console.error('[ERROR] Erro ao imprimir nota de retorno:', error);
@@ -141,7 +149,6 @@ export default function PedidosRetorno() {
       });
       setSelectedPedido(null);
       setRetornoQuantities({});
-      setGeloKg(0);
       setDivida(0);
       fetchPedidosEmAberto();
     } catch (error) {
@@ -226,10 +233,12 @@ export default function PedidosRetorno() {
                       <div className="text-right">Total</div>
                     </div>
                   </div>
-                  {selectedPedido.itens.map(item => {
+                  {selectedPedido.itens
+                    .filter(item => !item.produto_nao_devolve)
+                    .map(item => {
                     const { quantidadeVendida, valorTotal, maxRetorno } = calculateItemSummary(item);
                     return (
-                      <div key={item.id} className={`grid grid-cols-6 gap-2 items-center border-b pb-3 text-sm ${item.produto_nao_devolve ? 'bg-red-50/50' : ''}`}>
+                      <div key={item.id} className={`grid grid-cols-6 gap-2 items-center border-b pb-3 text-sm`}>
                         {/* Coluna 1-2: Produto */}
                         <div className="col-span-2">
                           <p className="font-medium">{item.produto_nome}</p>
@@ -300,34 +309,19 @@ export default function PedidosRetorno() {
                     <span>R$ {(totalGeral - divida).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center mb-4">
-                    <Label htmlFor="gelo" className="text-lg font-semibold">Gelo Retorno (kg):</Label>
-                    <Input
-                      id="gelo"
-                      type="text"
-                      inputMode="decimal"
-                      value={geloKg === 0 ? '' : geloKg.toFixed(3).replace('.', ',')}
-                      onChange={(e) => {
-                        const rawValue = e.target.value.replace(',', '.');
-                        const valor = parseFloat(rawValue) || 0;
-                        setGeloKg(Math.max(0, valor));
-                      }}
-                      className="w-16 h-8 text-xl text-right font-semibold"
-                      placeholder="0,000"
-                    />
-                  </div>
-                  <div className="flex justify-between items-center mb-4">
                     <Label htmlFor="divida" className="text-lg font-semibold">Cobrança de Dívida:</Label>
-                    <Input
+                    <input
                       id="divida"
-                      type="text"
+                      type="number"
                       inputMode="decimal"
-                      value={divida === 0 ? '' : divida.toFixed(2).replace('.', ',')}
+                      step="0.01"
+                      min="0"
+                      value={divida === 0 ? '' : divida}
                       onChange={(e) => {
-                        const rawValue = e.target.value.replace(',', '.');
-                        const valor = parseFloat(rawValue) || 0;
+                        const valor = parseFloat(e.target.value) || 0;
                         setDivida(Math.max(0, valor));
                       }}
-                      className="w-48 h-10 text-xl text-right font-semibold"
+                      className="w-48 h-10 text-xl text-right font-semibold px-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="0,00"
                     />
                   </div>
