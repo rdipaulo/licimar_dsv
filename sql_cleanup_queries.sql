@@ -11,7 +11,7 @@
 -- =====================================================================
 
 -- Contar pedidos
-SELECT COUNT(*) as total_pedidos FROM pedido;
+SELECT COUNT(*) AS total_pedidos FROM pedido;
 
 -- Listar todos os pedidos
 SELECT 
@@ -38,7 +38,7 @@ WHERE divida_acumulada > 0
 ORDER BY divida_acumulada DESC;
 
 -- Total de dívida acumulada
-SELECT SUM(divida_acumulada) as total_divida FROM ambulante;
+SELECT COALESCE(SUM(divida_acumulada), 0) AS total_divida FROM ambulante;
 
 -- =====================================================================
 -- 2. DELETAR HISTÓRICO DE PEDIDOS
@@ -82,7 +82,7 @@ WHERE nome = 'Ivan Magé';  -- Substitua pelo nome
 -- =====================================================================
 
 -- Deletar TUDO (pedidos + resetar dívidas) em uma transação
-BEGIN TRANSACTION;
+BEGIN;
     DELETE FROM pedido;
     UPDATE ambulante SET divida_acumulada = 0;
 COMMIT;
@@ -105,14 +105,15 @@ DELETE FROM sqlite_sequence;
 SELECT COUNT(*) as pedidos_restantes FROM pedido;
 
 -- Verificar se todas as dívidas foram zeradas
-SELECT COUNT(*) as ambulantes_com_divida FROM ambulante 
+SELECT COUNT(*) as ambulantes_com_divida 
+FROM ambulante 
 WHERE divida_acumulada > 0;
 
--- Resumo completo
+-- Resumo completo do banco de dados
 SELECT 
     (SELECT COUNT(*) FROM pedido) as total_pedidos,
     (SELECT COUNT(*) FROM ambulante WHERE divida_acumulada > 0) as ambulantes_com_divida,
-    (SELECT SUM(divida_acumulada) FROM ambulante) as total_divida_acumulada,
+    COALESCE((SELECT SUM(divida_acumulada) FROM ambulante), 0) as total_divida_acumulada,
     (SELECT COUNT(*) FROM usuario) as total_usuarios,
     (SELECT COUNT(*) FROM categoria) as total_categorias,
     (SELECT COUNT(*) FROM produto) as total_produtos,
@@ -133,8 +134,8 @@ CREATE TABLE ambulante_backup AS SELECT * FROM ambulante;
 -- INSERT INTO pedido SELECT * FROM pedido_backup;
 
 -- Deletar backups depois de confirmação
--- DROP TABLE pedido_backup;
--- DROP TABLE ambulante_backup;
+-- DROP TABLE IF EXISTS pedido_backup;
+-- DROP TABLE IF EXISTS ambulante_backup;
 
 -- =====================================================================
 -- COMO USAR ESTE ARQUIVO:

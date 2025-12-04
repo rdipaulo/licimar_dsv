@@ -29,9 +29,9 @@ interface Produto {
   nome: string;
   preco: number;
   estoque: number;
-  categoria_id: number | null;
-  categoria_nome: string | null;
-  descricao: string | null;
+  categoria_id?: number;
+  categoria_nome?: string;
+  descricao?: string;
   estoque_minimo: number;
   estoque_baixo: boolean;
   active: boolean;
@@ -72,10 +72,9 @@ const Produtos: React.FC = () => {
       setLoading(true);
       const response = await api.getProdutos({
         page: 1,
-        per_page: 1000,
-        active_only: !showInactive
+        per_page: 1000
       });
-      setProdutos(response.items || response.data || []);
+      setProdutos(response.items || []);
     } catch (error) {
       console.error('Erro ao carregar produtos:', error);
       toast.error('Erro ao carregar produtos');
@@ -90,8 +89,8 @@ const Produtos: React.FC = () => {
         page: 1,
         per_page: 100
       });
-      setCategorias(response.items || response.data || []);
-      console.log('[Produtos] Categorias carregadas:', response.items || response.data);
+      setCategorias(response.items || []);
+      console.log('[Produtos] Categorias carregadas:', response.items);
     } catch (error) {
       console.error('Erro ao carregar categorias:', error);
       toast.error('Erro ao carregar categorias');
@@ -138,8 +137,8 @@ const Produtos: React.FC = () => {
         nome: formData.nome,
         preco: parseFloat(formData.preco),
         estoque: parseInt(formData.estoque),
-        categoria_id: formData.categoria_id ? parseInt(formData.categoria_id) : null,
-        descricao: formData.descricao || null,
+        categoria_id: formData.categoria_id ? parseInt(formData.categoria_id) : undefined,
+        descricao: formData.descricao || undefined,
         estoque_minimo: parseInt(formData.estoque_minimo),
         peso: parseFloat(formData.peso) || 0,
       };
@@ -169,7 +168,16 @@ const Produtos: React.FC = () => {
     }
 
     try {
-      await api.updateProduto(produto.id, { active: newStatus });
+      const updateData: Partial<typeof produto> & { active: boolean } = {
+        nome: produto.nome,
+        preco: produto.preco,
+        estoque: produto.estoque,
+        categoria_id: produto.categoria_id,
+        descricao: produto.descricao,
+        estoque_minimo: produto.estoque_minimo,
+        active: newStatus,
+      };
+      await api.updateProduto(produto.id, updateData as any);
       toast.success(`Produto ${action}ado com sucesso!`);
       loadProdutos();
     } catch (error: any) {
@@ -372,6 +380,7 @@ const Produtos: React.FC = () => {
                 <Label htmlFor="categoria">Categoria</Label>
                 <select
                   id="categoria"
+                  title="Selecione uma categoria para o produto"
                   className="w-full px-3 py-2 border rounded-md"
                   value={formData.categoria_id}
                   onChange={(e) =>
@@ -426,6 +435,8 @@ const Produtos: React.FC = () => {
               <Label htmlFor="descricao">Descrição</Label>
               <textarea
                 id="descricao"
+                title="Digite a descrição do produto"
+                placeholder="Digite uma descrição para o produto (opcional)"
                 className="w-full px-3 py-2 border rounded-md"
                 rows={3}
                 value={formData.descricao}

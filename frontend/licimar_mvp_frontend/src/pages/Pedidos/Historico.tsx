@@ -111,6 +111,7 @@ export function HistoricoPedidos() {
               <div>
                 <label className="block text-sm font-medium mb-2">Status</label>
                 <select
+                  title="Filtrar pedidos por status"
                   value={statusFilter}
                   onChange={(e) => {
                     setStatusFilter(e.target.value);

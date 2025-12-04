@@ -27,6 +27,7 @@ export default function PedidosSaida() {
   const [carrinho, setCarrinho] = useState<CarrinhoItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [inputValues, setInputValues] = useState<Record<number, string>>({}); // Estado para inputs de gelo
 
   useEffect(() => {
     async function fetchData() {
@@ -58,6 +59,7 @@ export default function PedidosSaida() {
     if (!selectedclienteId) {
       setPedidoEmEdicao(null);
       setCarrinho([]);
+      setInputValues({}); // Limpar valores dos inputs
       return;
     }
 
@@ -83,6 +85,7 @@ export default function PedidosSaida() {
         } else {
           setPedidoEmEdicao(null);
           setCarrinho([]);
+          setInputValues({}); // Limpar valores dos inputs
         }
       } catch (error) {
         toast({
@@ -124,18 +127,35 @@ export default function PedidosSaida() {
       const produto = produtos.find(p => p.id === produtoId);
       if (!produto) return prevCarrinho;
 
-      const novoCarrinho = prevCarrinho
-        .map(item => {
-          if (item.produto_id === produtoId) {
-            return {
-              ...item,
-              quantidade_saida: newQuantity,
-              valor_total: produto.preco * newQuantity,
-            };
-          }
-          return item;
-        })
-        .filter(item => item.quantidade_saida > 0);
+      // Se a quantidade é 0 ou negativa, remove o item do carrinho
+      if (newQuantity <= 0) {
+        return prevCarrinho.filter(item => item.produto_id !== produtoId);
+      }
+
+      // Se o item NÃO existe, criar um novo
+      const itemExists = prevCarrinho.some(item => item.produto_id === produtoId);
+      if (!itemExists) {
+        const novoItem: CarrinhoItem = {
+          produto_id: produtoId,
+          produto_nome: produto.nome,
+          preco_unitario: produto.preco,
+          quantidade_saida: newQuantity,
+          valor_total: produto.preco * newQuantity,
+        };
+        return [...prevCarrinho, novoItem];
+      }
+
+      // Se o item existe, atualizar a quantidade
+      const novoCarrinho = prevCarrinho.map(item => {
+        if (item.produto_id === produtoId) {
+          return {
+            ...item,
+            quantidade_saida: newQuantity,
+            valor_total: produto.preco * newQuantity,
+          };
+        }
+        return item;
+      });
 
       return novoCarrinho;
     });
@@ -186,8 +206,8 @@ export default function PedidosSaida() {
         });
       } else {
         // Criar novo pedido
-        const newPedido = await apiService.createPedidoSaida(payload);
-        pedidoId = newPedido.id;
+        const response = await apiService.createPedidoSaida(payload);
+        pedidoId = response.pedido.id;
         toast({
           title: 'Sucesso',
           description: `Pedido de saída #${pedidoId} registrado com sucesso!`,
@@ -198,17 +218,22 @@ export default function PedidosSaida() {
       try {
         console.log(`[DEBUG] Iniciando impressão da nota de saída para pedido ${pedidoId}`);
         const blob = await apiService.imprimirNotaSaida(pedidoId);
-        console.log('[DEBUG] Nota de saída impressa com sucesso');
+        console.log('[DEBUG] Nota de saída impressa com sucesso, blob size:', blob.size);
         
         // Trigger download do PDF
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
         link.download = `nota_fiscal_saida_pedido_${pedidoId}.pdf`;
+        link.style.display = 'none';
         document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
+        
+        // Cleanup
+        setTimeout(() => {
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        }, 100);
         
         toast({
           title: 'Nota Fiscal',
@@ -226,6 +251,7 @@ export default function PedidosSaida() {
       // Limpar e recarregar - RESETAR TELA COMPLETAMENTE
       setSelectedclienteId(null);
       setCarrinho([]);
+      setInputValues({}); // Limpar valores dos inputs
       setPedidoEmEdicao(null);
       setIsLoading(true);
       
@@ -310,29 +336,26 @@ export default function PedidosSaida() {
                       <input
                         type="number"
                         inputMode="decimal"
-                        step="any"
+                        step="0.1"
                         min="0"
                         max="9999"
-                        value={
-                          (() => {
-                            const qtd = carrinho.find(item => item.produto_id === produto.id)?.quantidade_saida || 0;
-                            return qtd === 0 ? '' : String(qtd);
-                          })()
-                        }
+                        value={inputValues[produto.id] ?? ''}
                         onChange={(e) => {
-                          const rawValue = e.target.value.trim();
-                          if (rawValue === '') {
-                            handleUpdateItemQuantity(produto.id, 0);
+                          const newVal = e.target.value;
+                          setInputValues(prev => ({ ...prev, [produto.id]: newVal }));
+                          
+                          // Atualizar carrinho em tempo real
+                          const valor = parseFloat(newVal) || 0;
+                          if (valor > 0) {
+                            handleUpdateItemQuantity(produto.id, valor);
                           } else {
-                            const valor = parseFloat(rawValue);
-                            if (!isNaN(valor) && valor >= 0) {
-                              handleUpdateItemQuantity(produto.id, valor);
-                            }
+                            handleUpdateItemQuantity(produto.id, 0);
                           }
                         }}
                         onBlur={(e) => {
                           const valor = parseFloat(e.target.value) || 0;
-                          if (valor < 0) {
+                          if (valor <= 0) {
+                            setInputValues(prev => ({ ...prev, [produto.id]: '' }));
                             handleUpdateItemQuantity(produto.id, 0);
                           }
                         }}

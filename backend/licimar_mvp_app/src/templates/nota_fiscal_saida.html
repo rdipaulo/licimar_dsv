@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nota Fiscal de Saída - Pedido #{{ pedido.id }}</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; font-size: 10pt; }
@@ -8,13 +10,20 @@
         .header { text-align: center; margin-bottom: 15px; border-bottom: 2px solid #000; padding-bottom: 10px; }
         .header h1 { font-size: 16pt; margin: 0; font-weight: bold; }
         .header p { margin: 3px 0; }
+        .header-divider { margin: 5px 0; border: none; border-top: 2px solid #000; }
+        .header-nota { margin-top: 5px; }
         .details, .footer { margin-top: 10px; font-size: 9pt; }
         .details p, .footer p { margin: 3px 0; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9pt; }
         th, td { border: 1px solid #000; padding: 4px; text-align: left; }
         th { background-color: #ddd; font-weight: bold; }
+        th.center { text-align: center; }
+        th.right { text-align: right; }
         .total-row { font-weight: bold; background-color: #f5f5f5; }
+        .total-right { text-align: right; }
         .total { font-weight: bold; text-align: right; margin-top: 10px; font-size: 11pt; }
+        .footer-divider { margin-top: 15px; border-top: 1px solid #000; padding-top: 10px; text-align: center; }
+        .footer-text { font-size: 8pt; margin-top: 5px; text-align: center; }
     </style>
 </head>
 <body>
@@ -22,8 +31,8 @@
         <div class="header">
             <h1>LICIMAR MVP</h1>
             <p>Sistema de Gestão de Vendas</p>
-            <hr style="margin: 5px 0; border: none; border-top: 2px solid #000;">
-            <p style="margin-top: 5px;">NOTA DE SAÍDA</p>
+            <hr class="header-divider">
+            <p class="header-nota">NOTA DE SAÍDA</p>
         </div>
         
         <div class="details">
@@ -37,27 +46,23 @@
             <thead>
                 <tr>
                     <th>Produto</th>
-                    <th style="text-align: center;">Qtde.</th>
-                    <th style="text-align: right;">Preço</th>
-                    <th style="text-align: right;">Total</th>
+                    <th class="center">Qtde.</th>
+                    <th class="right">Preço</th>
+                    <th class="right">Total</th>
                 </tr>
             </thead>
             <tbody>
                 {{ itens_html | safe }}
                 <tr class="total-row">
-                    <td colspan="3" style="text-align: right;">TOTAL:</td>
-                    <td style="text-align: right;">R$ {{ "%.2f" | format(pedido.total) }}</td>
+                    <td colspan="3" class="total-right">TOTAL:</td>
+                    <td class="total-right">R$ {{ "%.2f" | format(pedido.total) }}</td>
                 </tr>
             </tbody>
         </table>
         
         <div class="footer">
-            <p style="text-align: center; margin-top: 15px; border-top: 1px solid #000; padding-top: 10px;">Obrigado pela preferência!</p>
-            <p style="text-align: center; font-size: 8pt; margin-top: 5px;">{{ "Gerado em " + pedido.data_operacao.strftime('%d/%m/%Y às %H:%M:%S') }}</p>
-        </div>
-    </div>
-</body>
-</html>
+            <p class="footer-divider">Obrigado pela preferência!</p>
+            <p class="footer-text">{{ "Gerado em " + pedido.data_operacao.strftime('%d/%m/%Y às %H:%M:%S') }}</p>
         </div>
     </div>
 </body>

@@ -1,7 +1,7 @@
 """
 Rotas para gerenciamento de pedidos
 """
-from flask import Blueprint, request, jsonify, current_app, render_template, make_response
+from flask import Blueprint, request, jsonify, current_app, render_template, make_response, send_file
 from ..models import Pedido, ItemPedido, Produto, Cliente
 from ..database import db
 from ..utils.decorators import token_required, admin_required, log_action
@@ -356,42 +356,71 @@ def imprimir_pedido(pedido_id):
     Gera uma nota fiscal (PDF) para o pedido de SAÍDA
     """
     try:
-        # Importação condicional para evitar erros em sistemas sem GTK
-        from weasyprint import HTML
+        from fpdf import FPDF
+        from io import BytesIO
         
         pedido = Pedido.query.get(pedido_id)
         
         if not pedido:
             return jsonify({'message': 'Pedido não encontrado'}), 404
         
-        itens_html = ''.join([
-            f'''
-            <tr>
-                <td>{item.produto.nome}</td>
-                <td>{float(item.quantidade_saida):.3f}</td>
-                <td>R$ {float(item.preco_unitario):.2f}</td>
-                <td>R$ {float(item.quantidade_saida * item.preco_unitario):.2f}</td>
-            </tr>
-            '''
-            for item in pedido.itens
-        ])
-
-        html_content = render_template(
-            'nota_fiscal_saida.html', # Usando um template específico para Saída
-            pedido=pedido,
-            itens_html=itens_html
+        # Criar PDF com fpdf2
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font('Helvetica', 'B', 16)
+        pdf.cell(0, 10, f'NOTA FISCAL DE SAIDA - Pedido #{pedido.id}', ln=True, align='C')
+        
+        pdf.set_font('Helvetica', '', 10)
+        pdf.ln(10)
+        
+        # Informações do cliente
+        pdf.set_font('Helvetica', 'B', 10)
+        pdf.cell(0, 5, f'Cliente: {pedido.cliente.nome}', ln=True)
+        pdf.cell(0, 5, f'Data: {pedido.created_at.strftime("%d/%m/%Y %H:%M")}', ln=True)
+        pdf.cell(0, 5, f'Total: R$ {float(pedido.total):.2f}', ln=True)
+        pdf.ln(5)
+        
+        # Tabela de itens
+        pdf.set_font('Helvetica', 'B', 9)
+        pdf.cell(60, 8, 'Produto', border=1)
+        pdf.cell(30, 8, 'Qtd', border=1, align='C')
+        pdf.cell(30, 8, 'Preco Unit.', border=1, align='C')
+        pdf.cell(30, 8, 'Total Item', border=1, align='C')
+        pdf.ln()
+        
+        pdf.set_font('Helvetica', '', 9)
+        for item in pedido.itens:
+            quantidade = float(item.quantidade_saida)
+            preco = float(item.preco_unitario)
+            total = quantidade * preco
+            
+            pdf.cell(60, 8, item.produto.nome[:30], border=1)
+            pdf.cell(30, 8, f'{quantidade:.3f}', border=1, align='C')
+            pdf.cell(30, 8, f'{preco:.2f}', border=1, align='C')
+            pdf.cell(30, 8, f'{total:.2f}', border=1, align='C')
+            pdf.ln()
+        
+        # Rodapé
+        pdf.ln(5)
+        pdf.set_font('Helvetica', 'B', 10)
+        pdf.cell(0, 8, f'TOTAL: R$ {float(pedido.total):.2f}', align='R')
+        
+        # Retornar PDF como bytes usando BytesIO
+        pdf_bytes = pdf.output()
+        pdf_io = BytesIO(pdf_bytes)
+        pdf_io.seek(0)
+        
+        return send_file(
+            pdf_io,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f'nota_fiscal_saida_{pedido_id}.pdf'
         )
-        
-        html = HTML(string=html_content)
-        pdf = html.write_pdf()
-        
-        response = make_response(pdf)
-        response.headers['Content-Type'] = 'application/pdf'
-        response.headers['Content-Disposition'] = f'attachment; filename=nota_fiscal_saida_pedido_{pedido_id}.pdf'
-        return response
 
     except Exception as e:
         current_app.logger.error(f"Erro ao gerar nota fiscal de saída: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'message': 'Erro interno do servidor'}), 500
 
 @pedidos_bp.route('/<int:pedido_id>/imprimir_retorno', methods=['GET'])
@@ -401,8 +430,8 @@ def imprimir_pedido_retorno(pedido_id):
     Gera uma nota fiscal (PDF) para o pedido de RETORNO/FINALIZADO
     """
     try:
-        # Importação condicional para evitar erros em sistemas sem GTK
-        from weasyprint import HTML
+        from fpdf import FPDF
+        from io import BytesIO
         
         pedido = Pedido.query.get(pedido_id)
         
@@ -412,36 +441,69 @@ def imprimir_pedido_retorno(pedido_id):
         if pedido.status != 'finalizado':
             return jsonify({'message': 'Apenas pedidos finalizados podem ter nota de retorno'}), 400
         
-        itens_html = ''.join([
-            f'''
-            <tr>
-                <td>{item.produto.nome}</td>
-                <td>{float(item.quantidade_saida):.3f}</td>
-                <td>{float(item.quantidade_retorno):.3f}</td>
-                <td>{float(item.quantidade_vendida()):.3f}</td>
-                <td>R$ {float(item.preco_unitario):.2f}</td>
-                <td>R$ {float(item.valor_total()):.2f}</td>
-            </tr>
-            '''
-            for item in pedido.itens
-        ])
-
-        html_content = render_template(
-            'nota_fiscal_retorno.html', # Usando um template específico para Retorno
-            pedido=pedido,
-            itens_html=itens_html
+        # Criar PDF com fpdf2
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font('Helvetica', 'B', 16)
+        pdf.cell(0, 10, f'NOTA FISCAL DE RETORNO - Pedido #{pedido.id}', ln=True, align='C')
+        
+        pdf.set_font('Helvetica', '', 10)
+        pdf.ln(10)
+        
+        # Informações do cliente
+        pdf.set_font('Helvetica', 'B', 10)
+        pdf.cell(0, 5, f'Cliente: {pedido.cliente.nome}', ln=True)
+        pdf.cell(0, 5, f'Data: {pedido.created_at.strftime("%d/%m/%Y %H:%M")}', ln=True)
+        pdf.cell(0, 5, f'Divida: R$ {float(pedido.divida):.2f}', ln=True)
+        pdf.ln(5)
+        
+        # Tabela de itens
+        pdf.set_font('Helvetica', 'B', 8)
+        pdf.cell(40, 8, 'Produto', border=1)
+        pdf.cell(20, 8, 'Saida', border=1, align='C')
+        pdf.cell(20, 8, 'Retorno', border=1, align='C')
+        pdf.cell(20, 8, 'Vendido', border=1, align='C')
+        pdf.cell(25, 8, 'Preco', border=1, align='C')
+        pdf.cell(25, 8, 'Total', border=1, align='C')
+        pdf.ln()
+        
+        pdf.set_font('Helvetica', '', 8)
+        for item in pedido.itens:
+            saida = float(item.quantidade_saida)
+            retorno = float(item.quantidade_retorno)
+            vendido = float(item.quantidade_vendida())
+            preco = float(item.preco_unitario)
+            total = float(item.valor_total())
+            
+            pdf.cell(40, 8, item.produto.nome[:20], border=1)
+            pdf.cell(20, 8, f'{saida:.2f}', border=1, align='C')
+            pdf.cell(20, 8, f'{retorno:.2f}', border=1, align='C')
+            pdf.cell(20, 8, f'{vendido:.2f}', border=1, align='C')
+            pdf.cell(25, 8, f'{preco:.2f}', border=1, align='C')
+            pdf.cell(25, 8, f'{total:.2f}', border=1, align='C')
+            pdf.ln()
+        
+        # Rodapé
+        pdf.ln(5)
+        pdf.set_font('Helvetica', 'B', 10)
+        pdf.cell(0, 8, f'TOTAL: R$ {float(pedido.total):.2f}', align='R')
+        
+        # Retornar PDF usando BytesIO
+        pdf_bytes = pdf.output()
+        pdf_io = BytesIO(pdf_bytes)
+        pdf_io.seek(0)
+        
+        return send_file(
+            pdf_io,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f'nota_fiscal_retorno_{pedido_id}.pdf'
         )
-        
-        html = HTML(string=html_content)
-        pdf = html.write_pdf()
-        
-        response = make_response(pdf)
-        response.headers['Content-Type'] = 'application/pdf'
-        response.headers['Content-Disposition'] = f'attachment; filename=nota_fiscal_retorno_pedido_{pedido_id}.pdf'
-        return response
 
     except Exception as e:
         current_app.logger.error(f"Erro ao gerar nota fiscal de retorno: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'message': 'Erro interno do servidor'}), 500
 
 @pedidos_bp.route('/<int:pedido_id>', methods=['DELETE'])
