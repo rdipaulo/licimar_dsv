@@ -17,9 +17,10 @@ export default function PedidosRetorno() {
   const [pedidosEmAberto, setPedidosEmAberto] = useState<Pedido[]>([]);
   const [selectedPedido, setSelectedPedido] = useState<Pedido | null>(null);
   const [retornoQuantities, setRetornoQuantities] = useState<Record<number, number>>({});
-  const [divida, setDivida] = useState(0);
+  const [cobrancaDivida, setCobrancaDivida] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saldoDevedor, setSaldoDevedor] = useState<number>(0);
 
   useEffect(() => {
     fetchPedidosEmAberto();
@@ -41,13 +42,23 @@ export default function PedidosRetorno() {
     }
   };
 
-  const handleSelectPedido = (pedido: Pedido) => {
+  const handleSelectPedido = async (pedido: Pedido) => {
     setSelectedPedido(pedido);
     const initialRetorno = pedido.itens.reduce((acc, item) => {
       acc[item.id] = 0;
       return acc;
     }, {} as Record<number, number>);
     setRetornoQuantities(initialRetorno);
+    setCobrancaDivida(0);
+
+    // Carregar saldo devedor do cliente
+    try {
+      const dividaData = await apiService.getDividaPendente(pedido.cliente_id);
+      setSaldoDevedor(dividaData.saldo_devedor || 0);
+    } catch (error) {
+      console.error('Erro ao carregar saldo devedor:', error);
+      setSaldoDevedor(0);
+    }
   };
 
   const handleRetornoChange = (itemId: number, value: string) => {
@@ -95,11 +106,13 @@ export default function PedidosRetorno() {
       const { valorTotal } = calculateItemSummary(item);
       return sum + valorTotal;
     }, 0);
-    return subtotal + divida;
-  }, [selectedPedido, retornoQuantities, divida]);
+    return subtotal + cobrancaDivida;
+  }, [selectedPedido, retornoQuantities, cobrancaDivida]);
 
   const handleFinalizarRetorno = async () => {
     if (!selectedPedido) return;
+
+    console.log('[DEBUG] handleFinalizarRetorno iniciado com cobrancaDivida:', cobrancaDivida);
 
     const payload: PedidoRetornoForm = {
       itens: selectedPedido.itens.map(item => ({
@@ -110,13 +123,37 @@ export default function PedidosRetorno() {
 
     setIsSubmitting(true);
     try {
-      // Payload com dívida
+      // Payload com cobrança de dívida
       const payloadComDivida = {
         ...payload,
-        divida: divida,
+        divida: cobrancaDivida,
       };
+      
+      // DEBUG: Log do payload
+      console.log('[DEBUG] Payload enviado para registrarRetorno:', JSON.stringify(payloadComDivida, null, 2));
+      console.log('[DEBUG] Valor de cobrancaDivida:', cobrancaDivida, typeof cobrancaDivida);
 
       await apiService.registrarRetorno(selectedPedido.id, payloadComDivida);
+      
+      // Registrar pagamento de dívida se o campo foi preenchido
+      if (cobrancaDivida > 0) {
+        try {
+          console.log(`[DEBUG] Registrando pagamento de dívida: Cliente ${selectedPedido.cliente_id}, Valor R$ ${cobrancaDivida}`);
+          await apiService.registrarPagamentoDivida({
+            id_cliente: selectedPedido.cliente_id,
+            cobranca_divida: cobrancaDivida,
+            descricao: `Cobrança do Pedido de Retorno #${selectedPedido.id}`,
+          });
+          console.log('[DEBUG] Pagamento de dívida registrado com sucesso');
+        } catch (error) {
+          console.error('[ERROR] Erro ao registrar pagamento de dívida:', error);
+          toast({
+            title: 'Aviso',
+            description: 'Retorno registrado, mas houve erro ao registrar o pagamento de dívida.',
+            variant: 'destructive',
+          });
+        }
+      }
       
       // IMPRIMIR NOTA FISCAL FINAL (Requisito do Usuário)
       try {
@@ -149,7 +186,7 @@ export default function PedidosRetorno() {
       });
       setSelectedPedido(null);
       setRetornoQuantities({});
-      setDivida(0);
+      setCobrancaDivida(0);
       fetchPedidosEmAberto();
     } catch (error) {
       toast({
@@ -213,6 +250,7 @@ export default function PedidosRetorno() {
               </p>
             ) : (
               <>
+                {/* Client information section */}
                 <div className="mb-4">
                   <p>
                     <strong>cliente:</strong> {selectedPedido.cliente_nome}
@@ -306,24 +344,32 @@ export default function PedidosRetorno() {
                 <div className="mt-4 pt-4 border-t">
                   <div className="flex justify-between text-lg font-semibold mb-2">
                     <span>Subtotal:</span>
-                    <span>R$ {(totalGeral - divida).toFixed(2)}</span>
+                    <span>R$ {(totalGeral - cobrancaDivida).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center mb-4">
-                    <Label htmlFor="divida" className="text-lg font-semibold">Cobrança de Dívida:</Label>
-                    <input
-                      id="divida"
-                      type="number"
-                      inputMode="decimal"
-                      step="0.01"
-                      min="0"
-                      value={divida === 0 ? '' : divida}
-                      onChange={(e) => {
-                        const valor = parseFloat(e.target.value) || 0;
-                        setDivida(Math.max(0, valor));
-                      }}
-                      className="w-48 h-10 text-xl text-right font-semibold px-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="0,00"
-                    />
+                    <Label htmlFor="cobrancaDivida" className="text-lg font-semibold">Cobrança de Dívida:</Label>
+                    <div className="space-y-2">
+                      <input
+                        id="cobrancaDivida"
+                        type="number"
+                        inputMode="decimal"
+                        step="0.01"
+                        min="0"
+                        value={cobrancaDivida}
+                        onChange={(e) => {
+                          const valor = parseFloat(e.target.value) || 0;
+                          console.log('[DEBUG] cobrancaDivida onChange:', valor);
+                          setCobrancaDivida(Math.max(0, valor));
+                        }}
+                        placeholder="0.00"
+                        className="border rounded px-2 py-1 text-right w-32"
+                      />
+                      {saldoDevedor > 0 && (
+                        <p className="text-sm text-orange-600 font-medium">
+                          Saldo devedor: R$ {saldoDevedor.toFixed(2)}
+                        </p>
+                      )}
+                    </div>
                   </div>
                   <div className="flex justify-between text-2xl font-bold mb-4 border-t pt-2">
                     <span>Total a Pagar:</span>

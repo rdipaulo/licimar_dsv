@@ -33,51 +33,33 @@ export function DashboardDivida() {
       });
       const clientesList = clientesResponse.items || [];
 
-      // Fetch all finished pedidos
-      const pedidosResponse = await apiService.getPedidos({
-        status: 'finalizado',
-        per_page: 1000,
-      });
-      const pedidos = pedidosResponse.items || [];
+      // Fetch divida pendente for each cliente
+      const summaries: DebtSummary[] = [];
+      let totalDividaAcumulada = 0;
 
-      // Calculate debt by cliente
-      const debtMap = new Map<number, { cliente: cliente; divida: number; pedidoCount: number; ultimoPedido?: string }>();
-
-      clientesList.forEach((cliente: cliente) => {
-        if (!debtMap.has(cliente.id)) {
-          debtMap.set(cliente.id, {
-            cliente,
-            divida: 0,
-            pedidoCount: 0,
-          });
+      for (const cliente of clientesList) {
+        try {
+          const dividaData = await apiService.getDividaPendente(cliente.id);
+          
+          if (dividaData.saldo_devedor > 0) {
+            summaries.push({
+              cliente,
+              totalDivida: dividaData.saldo_devedor,
+              totalPedidos: dividaData.quantidade_dividas,
+            });
+            totalDividaAcumulada += dividaData.saldo_devedor;
+          }
+        } catch (error) {
+          // Se o cliente não tiver dívida, apenas continua
+          console.log(`Nenhuma dívida para cliente ${cliente.id}`);
         }
-      });
+      }
 
-      pedidos.forEach((pedido: any) => {
-        const entry = debtMap.get(pedido.cliente_id);
-        if (entry) {
-          entry.divida += parseFloat(pedido.divida || 0);
-          entry.pedidoCount += 1;
-          entry.ultimoPedido = new Date(pedido.data_operacao).toLocaleDateString('pt-BR');
-        }
-      });
-
-      // Convert map to array and sort by debt amount
-      const summaries: DebtSummary[] = Array.from(debtMap.values())
-        .filter(entry => entry.divida > 0) // Only show clientes with debt
-        .map(entry => ({
-          cliente: entry.cliente,
-          totalDivida: entry.divida,
-          totalPedidos: entry.pedidoCount,
-          ultimoPedido: entry.ultimoPedido,
-        }))
-        .sort((a, b) => b.totalDivida - a.totalDivida);
+      // Sort by debt amount
+      summaries.sort((a, b) => b.totalDivida - a.totalDivida);
 
       setDebtSummaries(summaries);
-
-      // Calculate total debt
-      const total = summaries.reduce((sum, item) => sum + item.totalDivida, 0);
-      setTotalDivida(total);
+      setTotalDivida(totalDividaAcumulada);
     } catch (error) {
       toast({
         title: 'Erro ao carregar dados de dívida',

@@ -67,6 +67,45 @@ class Cliente(db.Model):
     # Relacionamentos
     pedidos = db.relationship('Pedido', backref='cliente', lazy=True)
     
+    @property
+    def divida_pendente_total(self):
+        """
+        Calcula o saldo devedor total do cliente.
+        
+        Lógica:
+        - Soma de todos os valor_divida (débitos) com status 'Em Aberto' ou 'Parcialmente Pago'
+        - MENOS a soma de todos os cobranca_divida (abatimentos)
+        
+        Returns:
+            float: Saldo devedor total
+        """
+        from sqlalchemy import func, or_
+        
+        # Obter todas as dívidas do cliente que não estão quitadas
+        dividas_abertas = Divida.query.filter(
+            Divida.id_cliente == self.id,
+            or_(
+                Divida.status == 'Em Aberto',
+                Divida.status == 'Parcialmente Pago'
+            )
+        ).all()
+        
+        # Calcular total de débitos
+        total_debitos = sum(float(d.valor_divida) for d in dividas_abertas)
+        
+        # Calcular total de abatimentos (pagamentos de dívida)
+        total_abatimentos = db.session.query(
+            func.sum(PagamentoDivida.cobranca_divida)
+        ).filter(
+            PagamentoDivida.id_divida.in_(
+                [d.id_divida for d in dividas_abertas]
+            )
+        ).scalar() or 0
+        
+        # Retornar saldo devedor
+        saldo_devedor = float(total_debitos) - float(total_abatimentos)
+        return max(0, saldo_devedor)  # Nunca retorna negativo
+    
     def to_dict(self):
         """Converte o objeto para dicionário"""
         return {
@@ -78,6 +117,7 @@ class Cliente(db.Model):
             'endereco': self.endereco,
             'status': self.status,
             'divida_acumulada': float(self.divida_acumulada) if self.divida_acumulada else 0,
+            'divida_pendente_total': self.divida_pendente_total,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
@@ -262,6 +302,145 @@ class ItemPedido(db.Model):
             'valor_total': float(self.valor_total()),
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
+
+class Divida(db.Model):
+    """Modelo para registro de dívidas de clientes"""
+    __tablename__ = 'dividas'
+    
+    id_divida = db.Column(db.Integer, primary_key=True)
+    id_cliente = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=False)
+    data_registro = db.Column(db.DateTime, default=get_brasilia_now, nullable=False)
+    valor_divida = db.Column(db.Numeric(10, 2), nullable=False)  # Valor total do débito
+    descricao = db.Column(db.String(255))
+    status = db.Column(db.String(50), default='Em Aberto', nullable=False)  # 'Em Aberto', 'Parcialmente Pago', 'Quitado'
+    created_at = db.Column(db.DateTime, default=get_brasilia_now)
+    updated_at = db.Column(db.DateTime, default=get_brasilia_now, onupdate=get_brasilia_now)
+    
+    # Relacionamentos
+    cliente = db.relationship('Cliente', backref='dividas', foreign_keys=[id_cliente])
+    pagamentos = db.relationship('PagamentoDivida', backref='divida', lazy=True, cascade='all, delete-orphan')
+    
+    def calcular_saldo_devedor(self):
+        """Calcula o saldo devedor (valor original - abatimentos)"""
+        total_abatido = sum(float(p.cobranca_divida) for p in self.pagamentos)
+        return float(self.valor_divida) - total_abatido
+    
+    def to_dict(self):
+        """Converte o objeto para dicionário"""
+        return {
+            'id_divida': self.id_divida,
+            'id_cliente': self.id_cliente,
+            'cliente_nome': self.cliente.nome if self.cliente else None,
+            'data_registro': self.data_registro.isoformat() if self.data_registro else None,
+            'valor_divida': float(self.valor_divida),
+            'descricao': self.descricao,
+            'status': self.status,
+            'saldo_devedor': self.calcular_saldo_devedor(),
+            'total_abatido': sum(float(p.cobranca_divida) for p in self.pagamentos),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+
+class PagamentoDivida(db.Model):
+    """Modelo para registrar pagamentos/abatimentos de dívidas"""
+    __tablename__ = 'pagamentos_divida'
+    
+    id_lancamento = db.Column(db.Integer, primary_key=True)
+    id_divida = db.Column(db.Integer, db.ForeignKey('dividas.id_divida'), nullable=False)
+    data_pagamento = db.Column(db.DateTime, default=get_brasilia_now, nullable=False)
+    cobranca_divida = db.Column(db.Numeric(10, 2), nullable=False)  # Valor cobrado (sempre positivo)
+    id_nota_venda = db.Column(db.Integer)  # Referência ao pedido/nota onde foi cobrado
+    descricao = db.Column(db.String(255))  # Motivo do abatimento
+    created_at = db.Column(db.DateTime, default=get_brasilia_now)
+    
+    def to_dict(self):
+        """Converte o objeto para dicionário"""
+        return {
+            'id_lancamento': self.id_lancamento,
+            'id_divida': self.id_divida,
+            'data_pagamento': self.data_pagamento.isoformat() if self.data_pagamento else None,
+            'cobranca_divida': float(self.cobranca_divida),
+            'id_nota_venda': self.id_nota_venda,
+            'descricao': self.descricao,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class PedidoConsignacao(db.Model):
+    """Modelo para pedidos de consignação (cabeçalho)"""
+    __tablename__ = 'pedidos_consignacao'
+    
+    id_pedido = db.Column(db.Integer, primary_key=True)
+    id_cliente = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=False)
+    data_pedido = db.Column(db.DateTime, default=get_brasilia_now, nullable=False)
+    tipo_operacao = db.Column(db.String(50), nullable=False)  # 'RETIRADA', 'DEVOLUCAO', 'ACERTO'
+    valor_total_final = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+    status = db.Column(db.String(50), default='Aberto', nullable=False)  # 'Aberto', 'Fechado', 'Cancelado'
+    observacoes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=get_brasilia_now)
+    updated_at = db.Column(db.DateTime, default=get_brasilia_now, onupdate=get_brasilia_now)
+    
+    # Relacionamentos
+    cliente = db.relationship('Cliente', backref='pedidos_consignacao', foreign_keys=[id_cliente])
+    itens = db.relationship('ItemPedidoConsignacao', backref='pedido_consignacao', lazy=True, cascade='all, delete-orphan')
+    
+    def calcular_total(self):
+        """Calcula o total do pedido baseado nos itens"""
+        total = sum(float(item.subtotal) for item in self.itens)
+        self.valor_total_final = total
+        return total
+    
+    def to_dict(self):
+        """Converte o objeto para dicionário"""
+        return {
+            'id_pedido': self.id_pedido,
+            'id_cliente': self.id_cliente,
+            'cliente_nome': self.cliente.nome if self.cliente else None,
+            'data_pedido': self.data_pedido.isoformat() if self.data_pedido else None,
+            'tipo_operacao': self.tipo_operacao,
+            'valor_total_final': float(self.valor_total_final),
+            'status': self.status,
+            'observacoes': self.observacoes,
+            'itens': [item.to_dict() for item in self.itens],
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+
+class ItemPedidoConsignacao(db.Model):
+    """Modelo para itens de pedido de consignação (detalhes)"""
+    __tablename__ = 'itens_pedido_consignacao'
+    
+    id_item_pedido = db.Column(db.Integer, primary_key=True)
+    id_pedido = db.Column(db.Integer, db.ForeignKey('pedidos_consignacao.id_pedido'), nullable=False)
+    id_produto = db.Column(db.Integer, db.ForeignKey('produtos.id'), nullable=False)
+    quantidade_negociada = db.Column(db.Numeric(10, 2), nullable=False)
+    valor_unitario_venda = db.Column(db.Numeric(10, 2), nullable=False)
+    subtotal = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+    created_at = db.Column(db.DateTime, default=get_brasilia_now)
+    
+    # Relacionamentos
+    produto = db.relationship('Produto', backref='itens_consignacao', foreign_keys=[id_produto])
+    
+    def calcular_subtotal(self):
+        """Calcula o subtotal do item"""
+        self.subtotal = float(self.quantidade_negociada) * float(self.valor_unitario_venda)
+        return self.subtotal
+    
+    def to_dict(self):
+        """Converte o objeto para dicionário"""
+        return {
+            'id_item_pedido': self.id_item_pedido,
+            'id_pedido': self.id_pedido,
+            'id_produto': self.id_produto,
+            'produto_nome': self.produto.nome if self.produto else None,
+            'quantidade_negociada': float(self.quantidade_negociada),
+            'valor_unitario_venda': float(self.valor_unitario_venda),
+            'subtotal': float(self.subtotal),
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
 
 class Log(db.Model):
     """Modelo para logs do sistema"""

@@ -17,6 +17,7 @@ from .routes.usuarios import usuarios_bp
 from .routes.pedidos import pedidos_bp
 from .routes.relatorios import relatorios_bp
 from .routes.logs import logs_bp
+from .routes.dividas import dividas_bp
 
 def create_app(config_name=None):
     try:
@@ -78,6 +79,7 @@ def create_app(config_name=None):
         app.register_blueprint(pedidos_bp, url_prefix='/api/pedidos')
         app.register_blueprint(relatorios_bp, url_prefix='/api/relatorios')
         app.register_blueprint(logs_bp, url_prefix='/api/logs')
+        app.register_blueprint(dividas_bp, url_prefix='/api/dividas')
         print("[APP] Blueprints registered", flush=True)
 
         @app.route('/')

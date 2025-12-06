@@ -28,6 +28,7 @@ export default function PedidosSaida() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inputValues, setInputValues] = useState<Record<number, string>>({}); // Estado para inputs de gelo
+  const [divida, setDivida] = useState(0); // Estado para dívida
 
   useEffect(() => {
     async function fetchData() {
@@ -190,6 +191,7 @@ export default function PedidosSaida() {
         produto_id: item.produto_id,
         quantidade_saida: item.quantidade_saida,
       })),
+      divida: divida, // Incluir dívida no payload
     };
 
     setIsSubmitting(true);
@@ -212,6 +214,29 @@ export default function PedidosSaida() {
           title: 'Sucesso',
           description: `Pedido de saída #${pedidoId} registrado com sucesso!`,
         });
+      }
+      
+      // Registrar dívida se o campo foi preenchido
+      if (divida > 0) {
+        try {
+          console.log(`[DEBUG] Registrando dívida: Cliente ${selectedclienteId}, Valor R${divida}`);
+          await apiService.registrarDivida({
+            id_cliente: selectedclienteId,
+            valor_divida: divida,
+            descricao: `Dívida do Pedido de Saída #${pedidoId}`,
+          });
+          toast({
+            title: 'Dívida Registrada',
+            description: `Dívida de R$ ${divida.toFixed(2)} registrada com sucesso.`,
+          });
+        } catch (error) {
+          console.error('[ERROR] Erro ao registrar dívida:', error);
+          toast({
+            title: 'Aviso',
+            description: 'Pedido registrado, mas houve erro ao registrar a dívida.',
+            variant: 'destructive',
+          });
+        }
       }
       
       // IMPRIMIR NOTA FISCAL (Requisito do Usuário)
@@ -252,6 +277,7 @@ export default function PedidosSaida() {
       setSelectedclienteId(null);
       setCarrinho([]);
       setInputValues({}); // Limpar valores dos inputs
+      setDivida(0); // Limpar dívida
       setPedidoEmEdicao(null);
       setIsLoading(true);
       
@@ -436,9 +462,25 @@ export default function PedidosSaida() {
             </div>
 
             <div className="mt-4 pt-4 border-t">
+              <div className="flex justify-between items-center mb-4">
+                <label className="text-sm font-medium">Dívida (R$):</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min="0"
+                  value={divida}
+                  onChange={(e) => {
+                    const valor = parseFloat(e.target.value) || 0;
+                    setDivida(Math.max(0, valor));
+                  }}
+                  className="w-32 h-8 text-right font-semibold px-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="0.00"
+                />
+              </div>
               <div className="flex justify-between text-xl font-bold mb-4">
                 <span>Total:</span>
-                <span>R$ {totalPedido.toFixed(2)}</span>
+                <span>R$ {(totalPedido + divida).toFixed(2)}</span>
               </div>
               <Button
                 onClick={handleFinalizarSaida}

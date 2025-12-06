@@ -546,6 +546,46 @@ class ApiService {
     const blob = await response.blob();
     return blob;
   }
+
+  // Dívidas
+  async registrarDivida(data: { id_cliente: number; valor_divida: number; descricao?: string }): Promise<{ message: string; id_divida: number; data_registro: string }> {
+    const response = await fetch(`${API_BASE_URL}/api/dividas/registrar`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data)
+    });
+    return this.handleResponse(response);
+  }
+
+  async registrarPagamentoDivida(data: { id_cliente: number; cobranca_divida: number; descricao?: string }): Promise<{ message: string; saldo_devedor_novo: number }> {
+    const response = await fetch(`${API_BASE_URL}/api/dividas/pagamentos-divida/registrar`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data)
+    });
+    return this.handleResponse(response);
+  }
+
+  async getDividaPendente(clienteId: number): Promise<{ cliente_id: number; cliente_nome: string; divida_total: number; cobrancas_total: number; saldo_devedor: number; quantidade_dividas: number }> {
+    const response = await fetch(`${API_BASE_URL}/api/dividas/clientes/${clienteId}/divida-pendente`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse(response);
+  }
+
+  async getDividas(params?: { page?: number; per_page?: number; status?: string; cliente_id?: number }): Promise<PaginatedResponse<any>> {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) searchParams.append(key, value.toString());
+      });
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/dividas?${searchParams}`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse(response);
+  }
 }
 
 export const apiService = new ApiService();

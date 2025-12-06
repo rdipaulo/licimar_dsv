@@ -265,6 +265,9 @@ def criar_pedido_retorno(pedido_id):
         if not data:
             return jsonify({'message': 'Dados não fornecidos'}), 400
         
+        # DEBUG
+        current_app.logger.info(f"[DEBUG] Dados recebidos: {data}")
+        
         itens_retorno = data.get('itens', [])
         divida = data.get('divida', 0.0)
         
@@ -310,6 +313,9 @@ def criar_pedido_retorno(pedido_id):
         pedido.divida = float(divida) # Adiciona o campo divida
         pedido.total = pedido.calcular_total() # Recalcula o total com a dívida
         pedido.updated_at = get_brasilia_now()
+        
+        # DEBUG
+        current_app.logger.info(f"[DEBUG] Pedido atualizado - divida: {pedido.divida}, total: {pedido.total}")
         
         db.session.commit()
         return jsonify({
@@ -404,6 +410,13 @@ def imprimir_pedido(pedido_id):
         pdf.ln(5)
         pdf.set_font('Helvetica', 'B', 10)
         pdf.cell(0, 8, f'TOTAL: R$ {float(pedido.total):.2f}', align='R')
+        pdf.ln()
+        
+        # Adicionar Dívida Pendente
+        saldo_devedor = pedido.cliente.divida_pendente_total
+        if saldo_devedor > 0:
+            pdf.set_font('Helvetica', '', 10)
+            pdf.cell(0, 8, f'ATENÇÃO - Dívida Pendente: R$ {saldo_devedor:.2f}', align='R')
         
         # Retornar PDF como bytes usando BytesIO
         pdf_bytes = pdf.output()
@@ -454,7 +467,6 @@ def imprimir_pedido_retorno(pedido_id):
         pdf.set_font('Helvetica', 'B', 10)
         pdf.cell(0, 5, f'Cliente: {pedido.cliente.nome}', ln=True)
         pdf.cell(0, 5, f'Data: {pedido.created_at.strftime("%d/%m/%Y %H:%M")}', ln=True)
-        pdf.cell(0, 5, f'Divida: R$ {float(pedido.divida):.2f}', ln=True)
         pdf.ln(5)
         
         # Tabela de itens
@@ -485,6 +497,22 @@ def imprimir_pedido_retorno(pedido_id):
         
         # Rodapé
         pdf.ln(5)
+        pdf.set_font('Helvetica', '', 10)
+        
+        # Calcular subtotal (sem a cobrança de dívida)
+        subtotal = float(pedido.total) - float(pedido.divida)
+        
+        pdf.cell(0, 8, f'Subtotal: R$ {subtotal:.2f}', align='R')
+        pdf.ln()
+        pdf.cell(0, 8, f'Cobrança de Dívida: R$ {float(pedido.divida):.2f}', align='R')
+        pdf.ln()
+        
+        # Adicionar Dívida Pendente
+        saldo_devedor = pedido.cliente.divida_pendente_total
+        pdf.set_font('Helvetica', '', 10)
+        pdf.cell(0, 8, f'Dívida Pendente: R$ {saldo_devedor:.2f}', align='R')
+        pdf.ln()
+        
         pdf.set_font('Helvetica', 'B', 10)
         pdf.cell(0, 8, f'TOTAL: R$ {float(pedido.total):.2f}', align='R')
         
